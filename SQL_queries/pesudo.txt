@@ -1,0 +1,15 @@
+CREATE TABLE Process_Config_hd (
+    Process_Config_id INT PRIMARY KEY,  -- Unique identifier for the process configuration
+    created_dtm DATETIME NOT NULL,      -- Timestamp when the configuration was created
+    Process_Description NVARCHAR(255),  -- Description of the process configuration
+    end_dat DATETIME                   -- Timestamp when the configuration ends (optional)
+);
+
+CREATE TABLE Process_Config_dt (
+    Process_Config_dt_id INT PRIMARY KEY IDENTITY(1,1),  -- Unique identifier for the detail record (auto-increment)
+    Process_Config_id INT NOT NULL,                      -- Foreign key referencing Process_Config_hd
+    Process_Config_param INT NOT NULL,                   -- Parameter value (e.g., time in hours)
+    end_dat DATETIME,                                    -- Timestamp when the parameter ends (optional)
+    CONSTRAINT FK_Process_Config_hd FOREIGN KEY (Process_Config_id) 
+        REFERENCES Process_Config_hd(Process_Config_id)  -- Foreign key constraint
+);
