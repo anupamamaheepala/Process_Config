@@ -66,7 +66,7 @@ def create_connection():
     try:
         connection = mysql.connector.connect(
             host='127.0.0.1', 
-            database='process_config',    
+            database='drs',    
             user='root',       
             password=''
         )
