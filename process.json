@@ -1,0 +1,179 @@
+{
+
+  "Incident_Id": 4,
+
+  "Account_Num": "string",
+
+  "Arrears": 0,
+
+  "Created_By": "string",
+
+  "Created_Dtm": "2025-03-18T06:46:03.794Z",
+
+  "Incident_Status": "string",
+
+  "Incident_Status_Dtm": "2025-03-18T06:46:03.794Z",
+
+  "Status_Description": "string",
+
+  "File_Name_Dump": "string",
+
+  "Batch_Id": "string",
+
+  "Batch_Id_Tag_Dtm": "2025-03-18T06:46:03.794Z",
+
+  "External_Data_Update_On": "2025-03-18T06:46:03.794Z",
+
+  "Filtered_Reason": "string",
+
+  "Export_On": "2025-03-18T06:46:03.794Z",
+
+  "File_Name_Rejected": "string",
+
+  "Rejected_Reason": "string",
+
+  "Incident_Forwarded_By": "string",
+
+  "Incident_Forwarded_On": "2025-03-18T06:46:03.794Z",
+
+  "Contact_Details": [
+
+    {
+
+      "Contact_Type": "string",
+
+      "Contact": "string",
+
+      "Create_Dtm": "2025-03-18T06:46:03.794Z",
+
+      "Create_By": "string"
+
+    }
+
+  ],
+
+  "Product_Details": [
+
+    {
+
+      "Product_Label": "string",
+
+      "Customer_Ref": "string",
+
+      "Product_Seq": 0,
+
+      "Equipment_Ownership": "string",
+
+      "Product_Id": "string",
+
+      "Product_Name": "string",
+
+      "Product_Status": "string",
+
+      "Effective_Dtm": "2025-03-18T06:46:03.794Z",
+
+      "Service_Address": "string",
+
+      "Cat": "string",
+
+      "Db_Cpe_Status": "string",
+
+      "Received_List_Cpe_Status": "string",
+
+      "Service_Type": "string",
+
+      "Region": "string",
+
+      "Province": "string"
+
+    }
+
+  ],
+
+  "Customer_Details": {
+
+    "Customer_Name": "string",
+
+    "Company_Name": "string",
+
+    "Company_Registry_Number": "string",
+
+    "Full_Address": "string",
+
+    "Zip_Code": "string",
+
+    "Customer_Type_Name": "string",
+
+    "Nic": "string",
+
+    "Customer_Type_Id": "string"
+
+  },
+
+  "Account_Details": {
+
+    "Account_Status": "string",
+
+    "Acc_Effective_Dtm": "2025-03-18T06:46:03.794Z",
+
+    "Acc_Activate_Date": "2025-03-18T06:46:03.794Z",
+
+    "Credit_Class_Id": "string",
+
+    "Credit_Class_Name": "string",
+
+    "Billing_Centre": "string",
+
+    "Customer_Segment": "string",
+
+    "Mobile_Contact_Tel": "string",
+
+    "Daytime_Contact_Tel": "string",
+
+    "Email_Address": "string",
+
+    "Last_Rated_Dtm": "2025-03-18T06:46:03.794Z"
+
+  },
+
+  "Last_Actions": {
+
+    "Billed_Seq": 0,
+
+    "Billed_Created": "2025-03-18T06:46:03.794Z",
+
+    "Payment_Seq": 0,
+
+    "Payment_Created": "2025-03-18T06:46:03.794Z"
+
+  },
+
+  "Marketing_Details": {
+
+    "ACCOUNT_MANAGER": "string",
+
+    "CONSUMER_MARKET": "string",
+
+    "Informed_To": "string",
+
+    "Informed_On": "2025-03-18T06:46:03.794Z"
+
+  },
+
+  "Action": "string",
+
+  "Validity_period": 0,
+
+  "Remark": "string",
+
+  "updatedAt": "2025-03-18T06:46:03.794Z",
+
+  "Rejected_By": "string",
+
+  "Rejected_Dtm": "2025-03-18T06:46:03.794Z",
+
+  "Arrears_Band": "string",
+
+  "Source_Type": "string"
+
+}
