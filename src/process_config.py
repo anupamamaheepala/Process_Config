@@ -137,6 +137,7 @@ def map_to_json(data):
             "Region": entry["Region"],
             "Province": entry["Province"]
         }
+        
         json_data["Product_Details"].append(product_detail)
 
     return json_data
