@@ -1,17 +1,13 @@
-from actionManipulation import main as action_main
 from utils.logger import get_logger
+from src.process_config import fetch_and_update_process_config
 
 # Initialize the logger
 logger = get_logger("status_logger")
 
 if __name__ == "__main__":
-    try:
-        logger.info("Starting main.py")
+    logger.info("Starting main.py")
+        
+    fetch_and_update_process_config()
 
-        # Call the main function from actionManipulation
-        action_main()
+    logger.info("Finished main.py")
 
-        logger.info("Finished main.py")
-
-    except Exception as e:
-        logger.error(f"An error occurred during the execution of main.py: {e}")
