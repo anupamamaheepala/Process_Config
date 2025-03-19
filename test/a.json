@@ -1,30 +1,47 @@
 {
-    "CR000000374_0000003746": {
-      "_id": "67da5dc5a2d9862538c0dead",
+  "CR000000374_0000003746": {
       "case_id": 5,
       "incident_id": 2001,
       "account_no": "0000003746",
       "customer_ref": "CR000000374",
       "ref_products": [
-        {
-          "_id": "67da5dc5a2d9862538c0deae",
-          "service": "E_SLT Peo TV Service",
-          "product_label": "1-DQLZNH6",
-          "product_status": "OK"
-        },
-        {
-          "_id": "67da5dc5a2d9862538c0deaf",
-          "service": "E_SLT Peo TV Service",
-          "product_label": "1-DQLZNH6",
-          "product_status": "OK"
-        },
-        {
-          "_id": "67da5dc5a2d9862538c0deb0",
-          "service": "AB Fiber Access Bearer",
-          "product_label": "1-DQLZNH6",
-          "product_status": "OK"
-        }
+          {
+              "service": "E_SLT Peo TV Service",
+              "product_label": "1-DQLZNH6",
+              "product_status": "OK"
+          },
+          {
+              "service": "E_SLT Peo TV Service",
+              "product_label": "1-DQLZNH6",
+              "product_status": "OK"
+          },
+          {
+              "service": "AB Fiber Access Bearer",
+              "product_label": "1-DQLZNH6",
+              "product_status": "OK"
+          }
+      ],
+      "incident_status": [],
+      "settlements": [],
+      "customer_details": [
+          {
+              "customer_ref": "CR000000374",
+              "account_no": null
+          }
+      ],
+      "last_payment": [
+          {
+              "AP_ACCOUNT_NUMBER": "0000003746",
+              "ACCOUNT_PAYMENT_SEQ": 114,
+              "AP_ACCOUNT_PAYMENT_MNY": 22567.0,
+              "ACCOUNT_PAYMENT_DAT": "2016-11-02T00:00:00",
+              "CREATED_DTM": "2016-11-02T15:49:56",
+              "ACCOUNT_PAYMENT_STATUS": 1,
+              "ALT_ACCOUNT_PAYMENT_MNY": null,
+              "CANCELLED_DTM": null,
+              "EVENT_REF": null,
+              "LOAD_DATE": "2024-01-08T06:31:41"
+          }
       ]
-    }
   }
-  
+}

@@ -2,6 +2,22 @@ import pymysql
 import pymongo
 from bson import ObjectId
 import json
+from decimal import Decimal
+from datetime import datetime
+
+def convert_to_serializable(obj):
+    """Recursively converts Decimal and datetime values to serializable types."""
+    if isinstance(obj, dict):
+        return {key: convert_to_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_serializable(item) for item in obj]
+    elif isinstance(obj, Decimal):
+        return float(obj)
+    elif isinstance(obj, datetime):
+        # Convert datetime to ISO format (or another format if needed)
+        return obj.isoformat()
+    else:
+        return obj
 
 def get_mongo_data(account_number):
     try:
@@ -28,6 +44,7 @@ def get_mongo_data(account_number):
         return mongo_data
     except Exception as e:
         print(f"MySQL connection error: {e}")
+        
         return {}
 
 def map_data_to_mongo_format(rows):
@@ -75,6 +92,9 @@ def add_payment_data_to_mongo_data(mongo_data, payment_data):
         mongo_data[key]["last_payment"] = payment_data
 
 def prepare_json_output(mongo_data):
+    # Convert any Decimal or datetime objects to serializable types
+    mongo_data = convert_to_serializable(mongo_data)
+    
     json_data = {
         f"{key[0]}_{key[1]}": {
             "case_id": value["case_id"],
@@ -127,14 +147,14 @@ def get_payment_data(account_number):
             password=core_config["mysql_password"]
         )
         cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
-        cursor.execute(f"SELECT * FROM payment_table WHERE ACCOUNT_NUM = '{account_number}' ORDER BY PAYMENT_DATE DESC")
+        cursor.execute(f"SELECT * FROM debt_payment WHERE AP_ACCOUNT_NUMBER = '{account_number}' ORDER BY ACCOUNT_PAYMENT_DAT DESC LIMIT 1")
         payment_rows = cursor.fetchall()
         cursor.close()
         mysql_conn.close()
         return payment_rows
     except Exception as e:
         print(f"MySQL connection error: {e}")
-        return []
+        return [] # add final after the except block
 
 core_config = {
     "mysql_host": "127.0.0.1",
