@@ -13,9 +13,9 @@ def get_data_json_format(account_number):
         # )
         mysql_conn = pymysql.connect(
             host=core_config["mysql_host"],
-            database=core_config["database"],
-            user=core_config["user"],
-            password=core_config["password"]
+            database=core_config["mysql_database"],
+            user=core_config["mysql_user"],
+            password=core_config["mysql_password"]
         )
 
         cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
@@ -126,12 +126,13 @@ def get_data_json_format(account_number):
         
     
 
-global(core_config) = {
+core_config = {
     "mysql_host": "127.0.0.1",
     "mysql_database": "drs",
     "mysql_user": "root",
     "mysql_password": ""
 }
+
 account_number = "0000003746"
 
-get_data_json_format(mysql_config, account_number)
+get_data_json_format(account_number)
