@@ -1,4 +1,4 @@
-def read_customer_details(account_num):
+def read_customer_detail(account_num):
     mongo_data = initialize_mongo_doc(account_num)
     doc_status,mongo_data = read_customer_details(mongo_data)
     doc_status, mongo_data = read_payment_details(mongo_data)
