@@ -1,6 +1,7 @@
 import pymysql
 from bson import ObjectId
 import json
+from datetime import datetime
 
 def fetch_customer_data(account_num):
     """
@@ -44,24 +45,26 @@ def initialize_mongo_doc(account_num):
                     "account_no": account_no,
                     "customer_ref": customer_ref,
                     "ref_products": [],
-                    "customer_details": [],
+                    "customer_details": {
+                        "customer_ref": customer_ref,
+                        "account_no": account_no,
+                        "full_name": row.get("NAME", ""),
+                        "email": "",
+                        "phone": "",
+                        "address": ""
+                    },
                     "incident_status": [],
                     "settlements": [],
                     "last_payment": [],
                 }
 
-                customer_details = {
-                    "customer_ref": customer_ref,
-                    "account_no": account_no,
-                }
-
-                mongo_data[key]["customer_details"].append(customer_details)
-
+            # Add product details to ref_products
             product_entry = {
                 "_id": ObjectId(),
                 "service": row["PRODUCT_NAME"],
                 "product_label": row["PROMOTION_INTEG_ID"],
                 "product_status": row["ACCOUNT_STATUS_BSS"],
+                "status_Dtm": datetime.strptime(row["product_status_Dtm"], "%d/%m/%Y %H:%M:%S") if row.get("product_status_Dtm") else None
             }
 
             mongo_data[key]["ref_products"].append(product_entry)
@@ -91,27 +94,19 @@ def read_customer_details(mongo_data):
 
             # Fetch additional customer details from MySQL
             cursor.execute(f"""
-                SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{account_no}'
+                SELECT * FROM customer_details 
+                WHERE ACCOUNT_NUM = '{account_no}'
             """)
             customer_details = cursor.fetchone()
 
             if customer_details:
                 # Update customer details in mongo_data
-                if value["customer_details"]:  # Check if customer_details already exists
-                    value["customer_details"][0].update({
-                        "full_name": customer_details.get("FULL_NAME", ""),
-                        "email": customer_details.get("EMAIL", ""),
-                        "phone": customer_details.get("PHONE", ""),
-                        "address": customer_details.get("ADDRESS", "")
-                    })
-                else:
-                    # If customer_details is empty, append the new details
-                    value["customer_details"].append({
-                        "full_name": customer_details.get("FULL_NAME", ""),
-                        "email": customer_details.get("EMAIL", ""),
-                        "phone": customer_details.get("PHONE", ""),
-                        "address": customer_details.get("ADDRESS", "")
-                    })
+                value["customer_details"].update({
+                    "full_name": customer_details.get("FULL_NAME", ""),
+                    "email": customer_details.get("EMAIL", ""),
+                    "phone": customer_details.get("PHONE", ""),
+                    "address": customer_details.get("ADDRESS", "")
+                })
 
         cursor.close()
         mysql_conn.close()
@@ -178,7 +173,8 @@ def format_json_object(mongo_data):
                 {
                     "service": product["service"],
                     "product_label": product["product_label"],
-                    "product_status": product["product_status"]
+                    "product_status": product["product_status"],
+                    "status_Dtm": product["status_Dtm"].isoformat() if product["status_Dtm"] else None
                 }
                 for product in value["ref_products"]
             ] if value["ref_products"] else [],
@@ -197,21 +193,13 @@ def format_json_object(mongo_data):
                 }
                 for settlement in value["settlements"]
             ] if value["settlements"] else [],
-            "customer_details": [
-                {
-                    "full_name": details.get("full_name", ""),
-                    "email": details.get("email", ""),
-                    "phone": details.get("phone", ""),
-                    "address": details.get("address", "")
-                }
-                for details in value["customer_details"]
-            ] if value["customer_details"] else [],
+            "customer_details": value["customer_details"],
             "last_payment": value.get("last_payment", [])  # Ensure last_payment is included
         }
         for key, value in mongo_data.items()
     }
 
-    json_output = json.dumps(json_data, indent=4)
+    json_output = json.dumps(json_data, indent=4, default=str)
     print(json_output)
     return True, json_output
 
