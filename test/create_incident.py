@@ -17,10 +17,14 @@ class create_incident:
         self.incident_id = incident_id
         self.mongo_data = self.initialize_mongo_doc(account_num)
         
+        
 
     def create_incident(self, payload):
-        self.read_customer_details()
-        return self.client.post("/incidents", json=payload)
+        status = self.read_customer_details()
+            # if status =="success":
+            #     self.read_payment_details
+                
+            # return self.client.post("/incidents", json=payload)
     
     def initialize_mongo_doc(self):
           # Initialize mongo_data as an empty dictionary
@@ -30,8 +34,11 @@ class create_incident:
             "incident_id": None,
             "account_num": self.account_num,
             "customer_ref": None,
-            "ref_products": [],
+            "product_details": [],
             "customer_details": [],
+            "account_details": [],
+            "marketing_details": [],
+            "last_action": [],
             "incident_status": [],
             "settlements": [],
             "last_payment": [],
@@ -54,20 +61,45 @@ class create_incident:
                 customer_ref = row["CUSTOMER_REF"]
                 account_num = row["ACCOUNT_NUM"]
                 
-                if self.mongo_data [0]("account_num") != None:
+                if self.mongo_data [self.account_num]("account_num") != None:
                     self.mongo_data[0]["customer_ref"] = customer_ref
                     self.mongo_data[0]["account_num"] = account_num
                     self.mongo_data[0]["incident_id"] = self.incident_id
-
+                    
+                    contact_details_element = {
+                        "Contact_Type": "email",
+                        "Contact": row["TECNICAL_CONTACT_EMAIL"],
+                        "Create_Dtm": row["LOAD_DATE"],
+                        "Create_By": "drs_admin"
+                    }
+                    mongo_data[0]["customer_details"].append(contact_details_element)
+                    
+                    contact_details_element = {
+                        "Contact_Type": "mobile",
+                        "Contact": row["MOBILE_CONTACT"],
+                        "Create_Dtm": row["LOAD_DATE"],
+                        "Create_By": "drs_admin"
+                    }
+                    mongo_data[0]["customer_details"].append(contact_details_element)
+                    
+                    contact_details_element = {
+                        "Contact_Type": "fix",
+                        "Contact": row["WORK_CONTACT"],
+                        "Create_Dtm": row["LOAD_DATE"],
+                        "Create_By": "drs_admin"
+                    }
+                    mongo_data[0]["customer_details"].append(contact_details_element)
                     
                 
 
-                    customer_details = {
-                        "customer_ref": customer_ref,
-                        "account_no": account_no,
-                    }
+                    # customer_details = {
+                    #     "customer_ref": customer_ref,
+                    #     "account_no": account_no,
+                    # }
 
-                    mongo_data[key]["customer_details"].append(customer_details)
+                    # mongo_data[key]["customer_details"].append(customer_details)
+                
+                    
 
                 product_entry = {
                     "service": row["PRODUCT_NAME"],
@@ -75,10 +107,10 @@ class create_incident:
                     "product_status": row["ACCOUNT_STATUS_BSS"],
                 }
 
-                mongo_data[key]["ref_products"].append(product_entry)
+                self.mongo_data[self.account_num]["product_details"].append(product_entry)
 
             # Map the data to mongo format
-            mongo_data = map_data_to_mongo_format(rows)
+            # mongo_data = map_data_to_mongo_format(rows)
             doc_status = "success"
         except Exception as e:
             print(f"MySQL connection error in reading customer details: {e}")
@@ -88,6 +120,6 @@ class create_incident:
                 cursor.close()
             if mysql_conn:
                 mysql_conn.close()
-        return doc_status, mongo_data
+        return doc_status
         
         
