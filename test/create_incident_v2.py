@@ -41,21 +41,39 @@ class create_incident:
           # Initialize mongo_data as an empty dictionary
         key = (self.account_num)  # Use a tuple of customer_ref and account_num as key
         self.mongo_data[key] = {
-            "case_id": None,
-            "incident_id": None,
-            "account_num": self.account_num,
-            "customer_ref": None,
-            "product_details": [],
-            "customer_details": [],
-            "contact_details": [],
-            "account_details": [],
-            "marketing_details": [],
-            "last_action": [],
-            "incident_status": [],
-            "settlements": [],
-            "last_payment": [],
+            "Incident_Id": None,
+            "Account_Num": self.account_num,
+            "Arrears": 0,
+            "Created_By": "None",
+            "Created_Dtm": None,
+            "Incident_Status": "None",
+            "Incident_Status_Dtm": None,
+            "Status_Description": "None",
+            "File_Name_Dump": "None",
+            "Batch_Id": "None",
+            "Batch_Id_Tag_Dtm": None,
+            "External_Data_Update_On": None,
+            "Filtered_Reason": "None",
+            "Export_On": None,
+            "File_Name_Rejected": "None",
+            "Rejected_Reason": "None",
+            "Incident_Forwarded_By": "None",
+            "Incident_Forwarded_On": "None",
+            "Contact_Details": [],
+            "Product_Details": [],
+            "Customer_Details": [],
+            "Account_Details": [],
+            "Last_Actions": [],
+            "Marketing_Details": [],
+            "Action": "string",
+            "Validity_period": "None",
+            "Remark": "string",
+            "updatedAt": "None",
+            "Rejected_By": "None",
+            "Rejected_Dtm": "None",
+            "Arrears_Band": "None",
+            "Source_Type": "None"
         }
-          
     def read_customer_details(self):
         mysql_conn = None
         cursor = None
@@ -185,7 +203,6 @@ class create_incident:
         json_data = {
             f"{self.account_num}": {
                 # Basic incident data
-                "case_id": self.mongo_data[self.account_num]["case_id"],
                 "incident_id": self.mongo_data[self.account_num]["incident_id"],
                 "account_num": self.mongo_data[self.account_num]["account_num"],
                 "customer_ref": self.mongo_data[self.account_num]["customer_ref"],
