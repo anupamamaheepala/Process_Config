@@ -179,12 +179,14 @@ def format_json_object(mongo_data):
             }
             for key, value in mongo_data.items()
         }
+        doc_status = "success"
     except Exception as e:
         print(f"Error formatting the JSON object: {e}")
         json_data = {}
+        doc_status = "error"
 
     json_output = json.dumps(json_data, indent=4)
-    return json_output
+    return doc_status, json_output
 
 def convert_to_serializable(obj):
     """Recursively converts Decimal and datetime values to serializable types."""
