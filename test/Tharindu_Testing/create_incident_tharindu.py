@@ -257,6 +257,7 @@ class create_incident:
 def format_json_object(self):
     # Prepare the MongoDB data as a JSON-compatible dictionary with simplified structure
     json_data = [{
+        "version": 1,
         "Incident_Id": self.mongo_data[self.account_num]["Incident_Id"],
         "Account_Num": self.mongo_data[self.account_num]["Account_Num"],
         "Arrears": self.mongo_data[self.account_num]["Arrears"],
