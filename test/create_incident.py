@@ -91,23 +91,25 @@ class create_incident:
                     }
                     self.mongo_data[0]["contact_details"].append(contact_details_element)
                     
+                customer_details = {
+                    "customer_name": row["CONTACT_PERSON"],
+                    "Company_Name": row["COMPANY_NAME"],
+                    "Company_Registry_Number": None,
+                    "Full_Address": row["ASSET_ADDRESS"],
+                    "Zip_Code": None,
+                    "Customer_Type_Name": None,
+                    "Nic": row["NIC"],
+                    "Customer_Type_Id": row["CUSTOMER_TYPE_ID"],
+                }
+                self.mongo_data[self.account_num]["customer_details"].append(customer_details)
                 
-
-                    # customer_details = {
-                    #     "customer_ref": customer_ref,
-                    #     "account_no": account_no,
-                    # }
-
-                    # mongo_data[key]["customer_details"].append(customer_details)
                 
-                    
-
+                
                 product_entry = {
                     "service": row["PRODUCT_NAME"],
                     "product_label": row["PROMOTION_INTEG_ID"],
                     "product_status": row["ACCOUNT_STATUS_BSS"],
                 }
-
                 self.mongo_data[self.account_num]["product_details"].append(product_entry)
 
             # Map the data to mongo format
