@@ -36,6 +36,7 @@ class create_incident:
             "customer_ref": None,
             "product_details": [],
             "customer_details": [],
+            "contact_details": [],
             "account_details": [],
             "marketing_details": [],
             "last_action": [],
@@ -72,7 +73,7 @@ class create_incident:
                         "Create_Dtm": row["LOAD_DATE"],
                         "Create_By": "drs_admin"
                     }
-                    mongo_data[0]["customer_details"].append(contact_details_element)
+                    self.mongo_data[0]["contact_details"].append(contact_details_element)
                     
                     contact_details_element = {
                         "Contact_Type": "mobile",
@@ -80,7 +81,7 @@ class create_incident:
                         "Create_Dtm": row["LOAD_DATE"],
                         "Create_By": "drs_admin"
                     }
-                    mongo_data[0]["customer_details"].append(contact_details_element)
+                    self.mongo_data[0]["contact_details"].append(contact_details_element)
                     
                     contact_details_element = {
                         "Contact_Type": "fix",
@@ -88,7 +89,7 @@ class create_incident:
                         "Create_Dtm": row["LOAD_DATE"],
                         "Create_By": "drs_admin"
                     }
-                    mongo_data[0]["customer_details"].append(contact_details_element)
+                    self.mongo_data[0]["contact_details"].append(contact_details_element)
                     
                 
 
