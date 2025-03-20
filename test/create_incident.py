@@ -121,5 +121,51 @@ class create_incident:
             if mysql_conn:
                 mysql_conn.close()
         return doc_status
+    
+    
+    def get_payment_data(self):
+        mysql_conn = None
+        cursor = None
+        try:
+            doc_status = "failure"
+            mysql_conn = pymysql.connect(
+                host=self.core_config["mysql_host"],
+                database=self.core_config["mysql_database"],
+                user=self.core_config["mysql_user"],
+                password=self.core_config["mysql_password"]
+            )
+            cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
+            cursor.execute(f"SELECT * FROM debt_payment WHERE AP_ACCOUNT_NUMBER = '{self.account_num}' ORDER BY ACCOUNT_PAYMENT_DAT DESC LIMIT 1")
+            payment_rows = cursor.fetchall()
+            
+            pay_seq = payment_rows["ACCOUNT_PAYMENT_SEQ"]
+            pay_mny = payment_rows["AP_ACCOUNT_PAYMENT_MNY"]
+            pay_dat = payment_rows["ACCOUNT_PAYMENT_DAT"]
+            
+             
+            """
+            &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+            put here last bill details.....
+            ***********************************************************
+            """
+            
+            last_actions = {
+                    "Payment_Seq": pay_seq,
+                    "Payment_Created": pay_dat,
+                    "Payment_Money": pay_mny,
+                    "Billed_Seq": None,
+                    "Billed_Created": None,
+                    "Billed_Money": None,
+                }
+            self.mongo_data[self.account_num]["last_action"].append(last_actions)
+            doc_status = "success"
+        except Exception as e:
+            print(f"MySQL connection error in getting payment data: {e}")
+        finally:
+            if cursor:
+                cursor.close()
+            if mysql_conn:
+                mysql_conn.close()
+        return doc_status
         
         
