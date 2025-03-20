@@ -16,7 +16,9 @@ def create_incident(account_num):
         formatted_json_doc = None
     return formatted_json_doc
 
-
+def initialize_mongo_doc(account_num):
+    """Initialize the Mongo document structure."""
+    return {}
 
 def read_customer_details(mongo_data, account_num):
     """Fetch customer details from the database and populate mongo_data."""
@@ -97,7 +99,21 @@ def map_data_to_mongo_format(rows):
         for row in rows:
             customer_ref = row["CUSTOMER_REF"]
             account_no = row["ACCOUNT_NUM"]
-            
+            key = (customer_ref, account_no)  # Use a tuple of customer_ref and account_num as key
+
+            if key not in mongo_data:
+                mongo_data[key] = {
+                    "_id": ObjectId(),
+                    "case_id": 5,
+                    "incident_id": 2001,
+                    "account_no": account_no,
+                    "customer_ref": customer_ref,
+                    "ref_products": [],
+                    "customer_details": [],
+                    "incident_status": [],
+                    "settlements": [],
+                    "last_payment": [],
+                }
 
                 customer_details = {
                     "customer_ref": customer_ref,
