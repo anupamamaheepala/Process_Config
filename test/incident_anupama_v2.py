@@ -57,67 +57,6 @@ def read_payment_details(mongo_data, account_num):
         doc_status = "error"
     return doc_status, mongo_data
 
-def get_payment_data(account_number):
-    """Fetch the latest payment data."""
-    mysql_conn = None
-    cursor = None
-    try:
-        mysql_conn = pymysql.connect(
-            host=core_config["mysql_host"],
-            database=core_config["mysql_database"],
-            user=core_config["mysql_user"],
-            password=core_config["mysql_password"]
-        )
-        cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
-        cursor.execute(f"SELECT * FROM debt_payment WHERE AP_ACCOUNT_NUMBER = '{account_number}' ORDER BY ACCOUNT_PAYMENT_DAT DESC LIMIT 1")
-        payment_rows = cursor.fetchall()
-    except Exception as e:
-        print(f"MySQL connection error in getting payment data: {e}")
-        payment_rows = []
-    finally:
-        if cursor:
-            cursor.close()
-        if mysql_conn:
-            mysql_conn.close()
-    return payment_rows
-
-def add_payment_data_to_mongo_data(mongo_data, payment_data):
-    """Add payment data to the Mongo document."""
-    try:
-        for key in mongo_data:
-            mongo_data[key]["last_payment"] = payment_data
-    except Exception as e:
-        print(f"Error adding payment data: {e}")
-
-def map_data_to_mongo_format(rows):
-    """Map the fetched rows to a MongoDB document format."""
-    mongo_data = {}
-
-    try:
-        for row in rows:
-            customer_ref = row["CUSTOMER_REF"]
-            account_no = row["ACCOUNT_NUM"]
-            
-
-                customer_details = {
-                    "customer_ref": customer_ref,
-                    "account_no": account_no,
-                }
-
-                mongo_data[key]["customer_details"].append(customer_details)
-
-            product_entry = {
-                "_id": ObjectId(),
-                "service": row["PRODUCT_NAME"],
-                "product_label": row["PROMOTION_INTEG_ID"],
-                "product_status": row["ACCOUNT_STATUS_BSS"],
-            }
-
-            mongo_data[key]["ref_products"].append(product_entry)
-    except Exception as e:
-        print(f"Error mapping data to Mongo format: {e}")
-
-    return mongo_data
 
 def format_json_object(mongo_data):
     """Format the Mongo data into a JSON object."""
