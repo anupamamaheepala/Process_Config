@@ -30,8 +30,9 @@ class create_incident:
         # Initialize mongo_data as an empty dictionary
         self.mongo_data = {
             account_num: {
+                "Doc_Version": "1.0",
                 "Incident_Id": incident_id,
-                "Account_Num": account_num,
+                "Account_Num": None,
                 "Arrears": 0,
                 "Created_By": "None",
                 "Created_Dtm": None,
@@ -90,14 +91,14 @@ class create_incident:
                 pprint.pprint(self.mongo_data)
                 
                 # created_by = data['0000003746']['Created_By']
-                created_by= self.mongo_data[self.account_num]["Created_By"]
+                Check_Val= self.mongo_data[self.account_num]["Account_Num"]
 
                 # Check if 'Created_By' is None
-                if created_by is None or created_by == 'None':
+                if Check_Val is None or Check_Val == 'None':
                 
                 # if self.mongo_data[self.account_num]["Account_Num"] is not None:
-                    self.mongo_data[self.account_num]["customer_ref"] = customer_ref
-                    self.mongo_data[self.account_num]["account_num"] = account_num
+                    # self.mongo_data[self.account_num]["customer_ref"] = customer_ref
+                    self.mongo_data[self.account_num]["Account_Num"] = account_num
                     self.mongo_data[self.account_num]["incident_id"] = self.incident_id
                     
                     self.mongo_data[self.account_num]["Created_By"] = "drs_admin"
@@ -172,6 +173,7 @@ class create_incident:
                         "Payment_Seq": None,
                         "Payment_Created": row["LAST_PAYMENT_DAT"],
                         "Payment_Money": row["LAST_PAYMENT_MNY"],
+                        "Billed_Amount": row["LAST_PAYMENT_MNY"]  # Changed to Billed_Amount
                     }
                     self.mongo_data[self.account_num]["Last_Actions"].append(last_actions_element)
                 
@@ -233,7 +235,8 @@ class create_incident:
                 "Payment_Money": pay_mny,
                 "Billed_Seq": None,
                 "Billed_Created": None,
-                "Billed_Money": None,
+                # Changed to Billed_Amount
+                "Billed_Amount": pay_mny  
             }
             self.mongo_data[self.account_num]["Last_Actions"].append(last_actions)
             doc_status = "success"
@@ -262,7 +265,7 @@ class create_incident:
     def format_json_object(self):
         # Prepare the MongoDB data as a JSON-compatible dictionary with simplified structure
         json_data = [{
-            "version": 1,
+            "Doc_Version": self.mongo_data[self.account_num]["Doc_Version"],
             "Incident_Id": self.mongo_data[self.account_num]["Incident_Id"],
             "Account_Num": self.mongo_data[self.account_num]["Account_Num"],
             "Arrears": self.mongo_data[self.account_num]["Arrears"],
@@ -350,7 +353,9 @@ class create_incident:
                     "Billed_Created": self.convert_to_serializable(action["Billed_Created"] or datetime.now().isoformat()),
                     "Payment_Seq": action["Payment_Seq"],
                     "Payment_Created": self.convert_to_serializable(action["Payment_Created"] or datetime.now().isoformat()),
-                    "Payment_Money": self.convert_to_serializable(action["Payment_Money"])
+                    "Payment_Money": self.convert_to_serializable(action["Payment_Money"]),
+                    # Changed to Billed_Amount
+                    "Billed_Amount": self.convert_to_serializable(action.get("Billed_Amount", 0))  
                 }
                 for action in self.mongo_data[self.account_num]["Last_Actions"]
             ] if self.mongo_data[self.account_num]["Last_Actions"] else [],
