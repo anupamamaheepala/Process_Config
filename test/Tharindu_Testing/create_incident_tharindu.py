@@ -8,6 +8,7 @@ class create_incident:
     mongo_data = None
     core_config = {
         "mysql_host": "127.0.0.1",
+        "mysql_port": "3380",
         "mysql_database": "drs",
         "mysql_user": "root",
         "mysql_password": ""
@@ -16,7 +17,8 @@ class create_incident:
     def __init__(self, account_num, incident_id):
         self.account_num = account_num
         self.incident_id = incident_id
-        self.mongo_data = self.initialize_mongo_doc(account_num)
+        self.mongo_data = {}
+        self.mongo_data = self.initialize_mongo_doc(account_num, incident_id)
         
         
 
@@ -27,7 +29,7 @@ class create_incident:
                 
             # return self.client.post("/incidents", json=payload)
     
-    def initialize_mongo_doc(self):
+    def initialize_mongo_doc(self, account_num, incident_id):
           # Initialize mongo_data as an empty dictionary
         key = (self.account_num)  # Use a tuple of customer_ref and account_num as key
         self.mongo_data[key] = {
