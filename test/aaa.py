@@ -2,6 +2,7 @@ import pymysql
 from datetime import datetime, date
 from decimal import Decimal  # Import Decimal
 import json
+import pprint
 
 class create_incident:
     account_num = None
@@ -76,16 +77,30 @@ class create_incident:
                 password=self.core_config["mysql_password"]
             )
             cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
+            ss = f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'"
+            print(ss)
             cursor.execute(f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'")  
+            
             rows = cursor.fetchall()
             for row in rows:
                 customer_ref = row["CUSTOMER_REF"]
                 account_num = row["ACCOUNT_NUM"]
                 
-                if self.mongo_data[self.account_num]["Account_Num"] is not None:
+                print(type(self.mongo_data))
+                pprint.pprint(self.mongo_data)
+                
+                # created_by = data['0000003746']['Created_By']
+                created_by= self.mongo_data[self.account_num]["Created_By"]
+
+                # Check if 'Created_By' is None
+                if created_by is None or created_by == 'None':
+                
+                # if self.mongo_data[self.account_num]["Account_Num"] is not None:
                     self.mongo_data[self.account_num]["customer_ref"] = customer_ref
                     self.mongo_data[self.account_num]["account_num"] = account_num
                     self.mongo_data[self.account_num]["incident_id"] = self.incident_id
+                    
+                    self.mongo_data[self.account_num]["Created_By"] = "drs_admin"
                     
                     contact_details_element = {
                         "Contact_Type": "email",
@@ -111,35 +126,54 @@ class create_incident:
                     }
                     self.mongo_data[self.account_num]["Contact_Details"].append(contact_details_element)
                     
-                # Customer details element     
-                customer_details_element = {
-                    "Customer_Name": row["CONTACT_PERSON"],
-                    "Company_Name": row["COMPANY_NAME"],
-                    "Company_Registry_Number": None,
-                    "Full_Address": row["ASSET_ADDRESS"],
-                    "Zip_Code": None,
-                    "Customer_Type_Name": None,
-                    "Nic": row["NIC"],
-                    "Customer_Type_Id": row["CUSTOMER_TYPE_ID"],
-                    "Customer_Type": row["CUSTOMER_TYPE"],
-                }
-                self.mongo_data[self.account_num]["Customer_Details"].append(customer_details_element)
-                
-                # Account details element
-                account_details_element = {
-                    "Account_Status": row["ACCOUNT_STATUS_BSS"],
-                    "Acc_Effective_Dtm": row["ACCOUNT_EFFECTIVE_DTM_BSS"],
-                    "Acc_Activate_Date": None,
-                    "Credit_Class_Id": row["CREDIT_CLASS_ID"],
-                    "Credit_Class_Name": row["CREDIT_CLASS_NAME"],
-                    "Billing_Centre": row["BILLING_CENTER_NAME"],
-                    "Customer_Segment": row["CUSTOMER_SEGMENT_ID"],
-                    "Mobile_Contact_Tel": row["MOBILE_CONTACT_TEL"],
-                    "Daytime_Contact_Tel": row["DAYTIME_CONTACT_TEL"],
-                    "Email_Address": row["EMAIL"],
-                    "Last_Rated_Dtm": None,
-                }
-                self.mongo_data[self.account_num]["Account_Details"].append(account_details_element)
+                    # Customer details element     
+                    customer_details_element = {
+                        "Customer_Name": row["CONTACT_PERSON"],
+                        "Company_Name": row["COMPANY_NAME"],
+                        "Company_Registry_Number": None,
+                        "Full_Address": row["ASSET_ADDRESS"],
+                        "Zip_Code": None,
+                        "Customer_Type_Name": None,
+                        "Nic": row["NIC"],
+                        "Customer_Type_Id": row["CUSTOMER_TYPE_ID"],
+                        "Customer_Type": row["CUSTOMER_TYPE"],
+                    }
+                    self.mongo_data[self.account_num]["Customer_Details"].append(customer_details_element)
+                    
+                    # Account details element
+                    account_details_element = {
+                        "Account_Status": row["ACCOUNT_STATUS_BSS"],
+                        "Acc_Effective_Dtm": row["ACCOUNT_EFFECTIVE_DTM_BSS"],
+                        "Acc_Activate_Date": None,
+                        "Credit_Class_Id": row["CREDIT_CLASS_ID"],
+                        "Credit_Class_Name": row["CREDIT_CLASS_NAME"],
+                        "Billing_Centre": row["BILLING_CENTER_NAME"],
+                        "Customer_Segment": row["CUSTOMER_SEGMENT_ID"],
+                        "Mobile_Contact_Tel": row["MOBILE_CONTACT_TEL"],
+                        "Daytime_Contact_Tel": row["DAYTIME_CONTACT_TEL"],
+                        "Email_Address": row["EMAIL"],
+                        "Last_Rated_Dtm": None,
+                    }
+                    self.mongo_data[self.account_num]["Account_Details"].append(account_details_element)
+                    
+                    # Marketing details element
+                    marketing_details_element = {
+                        "ACCOUNT_MANAGER": None,
+                        "CONSUMER_MARKET": None,
+                        "Informed_To": None,
+                        "Informed_On": None,
+                    }
+                    self.mongo_data[self.account_num]["Marketing_Details"].append(marketing_details_element)
+                    
+                    # Last actions element
+                    last_actions_element = {
+                        "Billed_Seq": row["LAST_BILL_SEQ"],
+                        "Billed_Created": row["LAST_BILL_DTM"],
+                        "Payment_Seq": None,
+                        "Payment_Created": row["LAST_PAYMENT_DAT"],
+                        "Payment_Money": row["LAST_PAYMENT_MNY"],
+                    }
+                    self.mongo_data[self.account_num]["Last_Actions"].append(last_actions_element)
                 
                 # Product details element
                 product_details_element = {
@@ -161,24 +195,7 @@ class create_incident:
                 }
                 self.mongo_data[self.account_num]["Product_Details"].append(product_details_element)
                 
-                # Marketing details element
-                marketing_details_element = {
-                    "ACCOUNT_MANAGER": None,
-                    "CONSUMER_MARKET": None,
-                    "Informed_To": None,
-                    "Informed_On": None,
-                }
-                self.mongo_data[self.account_num]["Marketing_Details"].append(marketing_details_element)
-                
-                # Last actions element
-                last_actions_element = {
-                    "Billed_Seq": row["LAST_BILL_SEQ"],
-                    "Billed_Created": row["LAST_BILL_DTM"],
-                    "Payment_Seq": None,
-                    "Payment_Created": row["LAST_PAYMENT_DAT"],
-                    "Payment_Money": row["LAST_PAYMENT_MNY"],
-                }
-                self.mongo_data[self.account_num]["Last_Actions"].append(last_actions_element)
+
                 
             doc_status = "success"
         except Exception as e:
@@ -363,9 +380,9 @@ class create_incident:
         serializable_data = self.convert_to_serializable(json_data)
         return json.dumps(serializable_data, indent=4)
 
-# Example usage:
-incident = create_incident("0000003746", "67890")
-incident.read_customer_details()
-incident.get_payment_data()
-json_output = incident.format_json_object()
-print(json_output)
+if __name__ == "__main__":
+    incident = create_incident("0000003746", "3")
+    incident.read_customer_details()
+    incident.get_payment_data()
+    json_output = incident.format_json_object()
+    print(json_output)

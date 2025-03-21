@@ -1,47 +1,112 @@
-{
-  "CR000000374_0000003746": {
-      "case_id": 5,
-      "incident_id": 2001,
-      "account_no": "0000003746",
-      "customer_ref": "CR000000374",
-      "ref_products": [
-          {
-              "service": "E_SLT Peo TV Service",
-              "product_label": "1-DQLZNH6",
-              "product_status": "OK"
-          },
-          {
-              "service": "E_SLT Peo TV Service",
-              "product_label": "1-DQLZNH6",
-              "product_status": "OK"
-          },
-          {
-              "service": "AB Fiber Access Bearer",
-              "product_label": "1-DQLZNH6",
-              "product_status": "OK"
-          }
-      ],
-      "incident_status": [],
-      "settlements": [],
-      "customer_details": [
-          {
-              "customer_ref": "CR000000374",
-              "account_no": null
-          }
-      ],
-      "last_payment": [
-          {
-              "AP_ACCOUNT_NUMBER": "0000003746",
-              "ACCOUNT_PAYMENT_SEQ": 114,
-              "AP_ACCOUNT_PAYMENT_MNY": 22567.0,
-              "ACCOUNT_PAYMENT_DAT": "2016-11-02T00:00:00",
-              "CREATED_DTM": "2016-11-02T15:49:56",
-              "ACCOUNT_PAYMENT_STATUS": 1,
-              "ALT_ACCOUNT_PAYMENT_MNY": null,
-              "CANCELLED_DTM": null,
-              "EVENT_REF": null,
-              "LOAD_DATE": "2024-01-08T06:31:41"
-          }
-      ]
-  }
-}
+[
+    {
+        "version": 1,
+        "Incident_Id": "67890",
+        "Account_Num": "0000003614",
+        "Arrears": 0,
+        "Created_By": "None",
+        "Created_Dtm": "2025-03-21T11:09:01.185158",
+        "Incident_Status": "None",
+        "Incident_Status_Dtm": "2025-03-21T11:09:01.185158",
+        "Status_Description": "None",
+        "File_Name_Dump": "None",
+        "Batch_Id": "None",
+        "Batch_Id_Tag_Dtm": "2025-03-21T11:09:01.185158",
+        "External_Data_Update_On": "2025-03-21T11:09:01.185158",
+        "Filtered_Reason": "None",
+        "Export_On": "2025-03-21T11:09:01.185158",
+        "File_Name_Rejected": "None",
+        "Rejected_Reason": "None",
+        "Incident_Forwarded_By": "None",
+        "Incident_Forwarded_On": "None",
+        "Contact_Details": [
+            {
+                "Contact_Type": "email",
+                "Contact": null,
+                "Create_Dtm": "2025-02-22",
+                "Create_By": "drs_admin"
+            },
+            {
+                "Contact_Type": "mobile",
+                "Contact": "0779066274",
+                "Create_Dtm": "2025-02-22",
+                "Create_By": "drs_admin"
+            },
+            {
+                "Contact_Type": "fix",
+                "Contact": null,
+                "Create_Dtm": "2025-02-22",
+                "Create_By": "drs_admin"
+            }
+        ],
+        "Product_Details": [
+            {
+                "Product_Label": "1-2VSX-1861",
+                "Customer_Ref": "CR000000361",
+                "Product_Seq": 35,
+                "Equipment_Ownership": "None",
+                "Product_Id": "1-2RDZ-341",
+                "Product_Name": "V_SLT Voice Service",
+                "Product_Status": "Inactive",
+                "Effective_Dtm": "1997-01-02",
+                "Service_Address": "-, Charlie Hill, -, -, Avissawella, Colombo, Western, Sri Lanka, 10700",
+                "Cat": "Individual",
+                "Db_Cpe_Status": "None",
+                "Received_List_Cpe_Status": "None",
+                "Service_Type": "V-VOICE FTTH",
+                "Region": "Avissawella",
+                "Province": "Western"
+            }
+        ],
+        "Customer_Details": {
+            "Customer_Name": "Mrs Irene Kelart",
+            "Company_Name": null,
+            "Company_Registry_Number": null,
+            "Full_Address": "-, Charlie Hill, -, -, Avissawella, Colombo, Western, Sri Lanka, 10700",
+            "Zip_Code": null,
+            "Customer_Type_Name": null,
+            "Nic": null,
+            "Customer_Type_Id": 1,
+            "Customer_Type": "Individual-Residential"
+        },
+        "Account_Details": {
+            "Account_Status": "OK",
+            "Acc_Effective_Dtm": "1997-01-02",
+            "Acc_Activate_Date": null,
+            "Credit_Class_Id": 1,
+            "Credit_Class_Name": "Residential - Low",
+            "Billing_Centre": "AWISSAWELLA",
+            "Customer_Segment": "05",
+            "Mobile_Contact_Tel": null,
+            "Daytime_Contact_Tel": null,
+            "Email_Address": null,
+            "Last_Rated_Dtm": null
+        },
+        "Last_Actions": [
+            {
+                "Billed_Seq": 258,
+                "Billed_Created": "2025-02-01",
+                "Payment_Seq": null,
+                "Payment_Created": "2023-09-12",
+                "Payment_Money": 8630000.0
+            }
+        ],
+        "Marketing_Details": [
+            {
+                "ACCOUNT_MANAGER": null,
+                "CONSUMER_MARKET": null,
+                "Informed_To": null,
+                "Informed_To": null,
+                "Informed_On": "2025-03-21T11:09:01.185158"
+            }
+        ],
+        "Action": "string",
+        "Validity_period": "None",
+        "Remark": "string",
+        "updatedAt": "None",
+        "Rejected_By": "None",
+        "Rejected_Dtm": "None",
+        "Arrears_Band": "None",
+        "Source_Type": "None"
+    }
+]

@@ -1,27 +1,9 @@
-# from utils.logger import get_logger
-# from src.process_config import fetch_and_update_process_config
+from test.aaa import create_incident
 
-# # Initialize the logger
-# logger = get_logger("status_logger")
-
-# if __name__ == "__main__":
-#     logger.info("Starting main.py")
-        
-#     fetch_and_update_process_config()
-
-#     logger.info("Finished main.py")
-
-
-
-from utils.logger import get_logger
-from src.process_config import fetch_and_update_process_config
-
-# Initialize the logger
-logger = get_logger("status_logger")
-
+# Example usage
 if __name__ == "__main__":
-    logger.info("Starting main.py")
-        
-    fetch_and_update_process_config()
-
-    logger.info("Finished main.py")
+    incident = create_incident("0000003746", "67890")
+    incident.read_customer_details()
+    incident.get_payment_data()
+    json_output = incident.format_json_object()
+    print(json_output)
