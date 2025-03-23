@@ -79,8 +79,8 @@ class create_incident:
                 password=self.core_config["mysql_password"]
             )
             cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
-            ss = f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'"
-            print(ss)
+            # ss = f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'"
+            # print(ss)
             cursor.execute(f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'")
 
             rows = cursor.fetchall()
@@ -88,8 +88,8 @@ class create_incident:
                 customer_ref = row["CUSTOMER_REF"]
                 account_num = row["ACCOUNT_NUM"]
 
-                print(type(self.mongo_data))
-                pprint.pprint(self.mongo_data)
+                # print(type(self.mongo_data))
+                # pprint.pprint(self.mongo_data)
 
                 # created_by = data['0000003746']['Created_By']
                 Check_Val = self.mongo_data[self.account_num]["Account_Num"]
@@ -134,7 +134,7 @@ class create_incident:
                         "Company_Name": row["COMPANY_NAME"],
                         "Company_Registry_Number": None,
                         "Full_Address": row["ASSET_ADDRESS"],
-                        "Zip_Code": None,
+                        "Zip_Code": row["ZIP_CODE"],
                         "Customer_Type_Name": None,
                         "Nic": row["NIC"],
                         "Customer_Type_Id": row["CUSTOMER_TYPE_ID"],
@@ -438,12 +438,3 @@ def process_incident(account_num, incident_id, api_url):
         print("Failed to send data to the API.")
 
 
-# Main block to run the code
-if __name__ == "__main__":
-    # Define the account number, incident ID, and API URL
-    account_num = "0000003746"
-    incident_id = "3"
-    api_url = "http://220.247.224.226:9571/docs"  # Replace with the actual API URL
-
-    # Process the incident
-    process_incident(account_num, incident_id, api_url)

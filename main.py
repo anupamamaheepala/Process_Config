@@ -1,9 +1,10 @@
-from test.aaa import create_incident
+from incident_process.aaa import process_incident
 
-# Example usage
 if __name__ == "__main__":
-    incident = create_incident("0000003746", "67890")
-    incident.read_customer_details()
-    incident.get_payment_data()
-    json_output = incident.format_json_object()
-    print(json_output)
+    # Define the account number, incident ID, and API URL
+    account_num = "0000003746"
+    incident_id = "3"
+    api_url = "http://220.247.224.226:9571/docs"  # Replace with the actual API URL
+
+    # Process the incident
+    process_incident(account_num, incident_id, api_url)
