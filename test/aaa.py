@@ -1,8 +1,9 @@
-import pymysql
-from datetime import datetime, date
+import pymysql  # Import MySQL Connector
+from datetime import datetime, date  # Import Date and Time
 from decimal import Decimal  # Import Decimal
-import json
-import pprint
+import json  # Import JSON
+import pprint  # Import Pretty Print for debugging
+import requests  # Import the requests library for API calls
 
 class create_incident:
     account_num = None
@@ -14,18 +15,18 @@ class create_incident:
         "mysql_user": "root",
         "mysql_password": ""
     }
-    
+
     def __init__(self, account_num, incident_id):  # Fixed method name
         self.account_num = account_num
         self.incident_id = incident_id
         self.mongo_data = self.initialize_mongo_doc(account_num, incident_id)
-        
+
     def create_incident(self, payload):
         status = self.read_customer_details()
         # if status == "success":
         #     self.read_payment_details()
         # return self.client.post("/incidents", json=payload)
-    
+
     def initialize_mongo_doc(self, account_num, incident_id):
         # Initialize mongo_data as an empty dictionary
         self.mongo_data = {
@@ -66,7 +67,7 @@ class create_incident:
             }
         }
         return self.mongo_data
-        
+
     def read_customer_details(self):
         mysql_conn = None
         cursor = None
@@ -80,29 +81,29 @@ class create_incident:
             cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
             ss = f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'"
             print(ss)
-            cursor.execute(f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'")  
-            
+            cursor.execute(f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'")
+
             rows = cursor.fetchall()
             for row in rows:
                 customer_ref = row["CUSTOMER_REF"]
                 account_num = row["ACCOUNT_NUM"]
-                
+
                 print(type(self.mongo_data))
                 pprint.pprint(self.mongo_data)
-                
+
                 # created_by = data['0000003746']['Created_By']
-                Check_Val= self.mongo_data[self.account_num]["Account_Num"]
+                Check_Val = self.mongo_data[self.account_num]["Account_Num"]
 
                 # Check if 'Created_By' is None
                 if Check_Val is None or Check_Val == 'None':
-                
-                # if self.mongo_data[self.account_num]["Account_Num"] is not None:
+
+                    # if self.mongo_data[self.account_num]["Account_Num"] is not None:
                     # self.mongo_data[self.account_num]["customer_ref"] = customer_ref
                     self.mongo_data[self.account_num]["Account_Num"] = account_num
                     self.mongo_data[self.account_num]["incident_id"] = self.incident_id
-                    
+
                     self.mongo_data[self.account_num]["Created_By"] = "drs_admin"
-                    
+
                     contact_details_element = {
                         "Contact_Type": "email",
                         "Contact": row["TECNICAL_CONTACT_EMAIL"],
@@ -110,7 +111,7 @@ class create_incident:
                         "Create_By": "drs_admin"
                     }
                     self.mongo_data[self.account_num]["Contact_Details"].append(contact_details_element)
-                    
+
                     contact_details_element = {
                         "Contact_Type": "mobile",
                         "Contact": row["MOBILE_CONTACT"],
@@ -118,7 +119,7 @@ class create_incident:
                         "Create_By": "drs_admin"
                     }
                     self.mongo_data[self.account_num]["Contact_Details"].append(contact_details_element)
-                    
+
                     contact_details_element = {
                         "Contact_Type": "fix",
                         "Contact": row["WORK_CONTACT"],
@@ -126,8 +127,8 @@ class create_incident:
                         "Create_By": "drs_admin"
                     }
                     self.mongo_data[self.account_num]["Contact_Details"].append(contact_details_element)
-                    
-                    # Customer details element     
+
+                    # Customer details element
                     customer_details_element = {
                         "Customer_Name": row["CONTACT_PERSON"],
                         "Company_Name": row["COMPANY_NAME"],
@@ -140,7 +141,7 @@ class create_incident:
                         "Customer_Type": row["CUSTOMER_TYPE"],
                     }
                     self.mongo_data[self.account_num]["Customer_Details"].append(customer_details_element)
-                    
+
                     # Account details element
                     account_details_element = {
                         "Account_Status": row["ACCOUNT_STATUS_BSS"],
@@ -156,7 +157,7 @@ class create_incident:
                         "Last_Rated_Dtm": None,
                     }
                     self.mongo_data[self.account_num]["Account_Details"].append(account_details_element)
-                    
+
                     # Marketing details element
                     marketing_details_element = {
                         "ACCOUNT_MANAGER": None,
@@ -165,7 +166,7 @@ class create_incident:
                         "Informed_On": None,
                     }
                     self.mongo_data[self.account_num]["Marketing_Details"].append(marketing_details_element)
-                    
+
                     # Last actions element
                     last_actions_element = {
                         "Billed_Seq": row["LAST_BILL_SEQ"],
@@ -176,7 +177,7 @@ class create_incident:
                         "Billed_Amount": row["LAST_PAYMENT_MNY"]  # Changed to Billed_Amount
                     }
                     self.mongo_data[self.account_num]["Last_Actions"].append(last_actions_element)
-                
+
                 # Product details element
                 product_details_element = {
                     "Product_Label": row["PROMOTION_INTEG_ID"],
@@ -196,9 +197,7 @@ class create_incident:
                     "Province": row["PROVINCE"],
                 }
                 self.mongo_data[self.account_num]["Product_Details"].append(product_details_element)
-                
 
-                
             doc_status = "success"
         except Exception as e:
             print(f"MySQL connection error in reading customer details: {e}")
@@ -209,7 +208,7 @@ class create_incident:
             if mysql_conn:
                 mysql_conn.close()
         return doc_status
-    
+
     def get_payment_data(self):
         mysql_conn = None
         cursor = None
@@ -222,13 +221,14 @@ class create_incident:
                 password=self.core_config["mysql_password"]
             )
             cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
-            cursor.execute(f"SELECT * FROM debt_payment WHERE AP_ACCOUNT_NUMBER = '{self.account_num}' ORDER BY ACCOUNT_PAYMENT_DAT DESC LIMIT 1")
+            cursor.execute(
+                f"SELECT * FROM debt_payment WHERE AP_ACCOUNT_NUMBER = '{self.account_num}' ORDER BY ACCOUNT_PAYMENT_DAT DESC LIMIT 1")
             payment_rows = cursor.fetchall()
-            
+
             pay_seq = payment_rows[0]["ACCOUNT_PAYMENT_SEQ"]
             pay_mny = payment_rows[0]["AP_ACCOUNT_PAYMENT_MNY"]
             pay_dat = payment_rows[0]["ACCOUNT_PAYMENT_DAT"]
-            
+
             last_actions = {
                 "Payment_Seq": pay_seq,
                 "Payment_Created": pay_dat,
@@ -236,7 +236,7 @@ class create_incident:
                 "Billed_Seq": None,
                 "Billed_Created": None,
                 # Changed to Billed_Amount
-                "Billed_Amount": pay_mny  
+                "Billed_Amount": pay_mny
             }
             self.mongo_data[self.account_num]["Last_Actions"].append(last_actions)
             doc_status = "success"
@@ -248,7 +248,7 @@ class create_incident:
             if mysql_conn:
                 mysql_conn.close()
         return doc_status
-        
+
     def convert_to_serializable(self, data):
         # Convert datetime, date, and Decimal objects to strings or floats
         if isinstance(data, dict):
@@ -261,7 +261,7 @@ class create_incident:
             return float(data)  # Convert Decimal to float
         else:
             return data
-        
+
     def format_json_object(self):
         # Prepare the MongoDB data as a JSON-compatible dictionary with simplified structure
         json_data = [{
@@ -284,7 +284,7 @@ class create_incident:
             "Rejected_Reason": self.mongo_data[self.account_num]["Rejected_Reason"],
             "Incident_Forwarded_By": self.mongo_data[self.account_num]["Incident_Forwarded_By"],
             "Incident_Forwarded_On": self.convert_to_serializable(self.mongo_data[self.account_num]["Incident_Forwarded_On"] or datetime.now().isoformat()),
-            
+
             # Contact details list
             "Contact_Details": [
                 {
@@ -295,7 +295,7 @@ class create_incident:
                 }
                 for contact in self.mongo_data[self.account_num]["Contact_Details"]
             ] if self.mongo_data[self.account_num]["Contact_Details"] else [],
-            
+
             # Product details list
             "Product_Details": [
                 {
@@ -317,7 +317,7 @@ class create_incident:
                 }
                 for product in self.mongo_data[self.account_num]["Product_Details"]
             ] if self.mongo_data[self.account_num]["Product_Details"] else [],
-            
+
             # Customer details
             "Customer_Details": {
                 "Customer_Name": self.mongo_data[self.account_num]["Customer_Details"][0]["Customer_Name"] if self.mongo_data[self.account_num]["Customer_Details"] else "string",
@@ -330,7 +330,7 @@ class create_incident:
                 "Customer_Type_Id": self.mongo_data[self.account_num]["Customer_Details"][0]["Customer_Type_Id"] if self.mongo_data[self.account_num]["Customer_Details"] else "string",
                 "Customer_Type": self.mongo_data[self.account_num]["Customer_Details"][0].get("Customer_Type", "string") if self.mongo_data[self.account_num]["Customer_Details"] else "string"
             },
-            
+
             # Account details
             "Account_Details": {
                 "Account_Status": self.mongo_data[self.account_num]["Account_Details"][0]["Account_Status"] if self.mongo_data[self.account_num]["Account_Details"] else "string",
@@ -345,7 +345,7 @@ class create_incident:
                 "Email_Address": self.mongo_data[self.account_num]["Account_Details"][0].get("Email_Address", "string") if self.mongo_data[self.account_num]["Account_Details"] else "string",
                 "Last_Rated_Dtm": self.convert_to_serializable(self.mongo_data[self.account_num]["Account_Details"][0].get("Last_Rated_Dtm", "None")) if self.mongo_data[self.account_num]["Account_Details"] else "string"
             },
-            
+
             # Last actions
             "Last_Actions": [
                 {
@@ -355,11 +355,11 @@ class create_incident:
                     "Payment_Created": self.convert_to_serializable(action["Payment_Created"] or datetime.now().isoformat()),
                     "Payment_Money": self.convert_to_serializable(action["Payment_Money"]),
                     # Changed to Billed_Amount
-                    "Billed_Amount": self.convert_to_serializable(action.get("Billed_Amount", 0))  
+                    "Billed_Amount": self.convert_to_serializable(action.get("Billed_Amount", 0))
                 }
                 for action in self.mongo_data[self.account_num]["Last_Actions"]
             ] if self.mongo_data[self.account_num]["Last_Actions"] else [],
-            
+
             # Marketing details
             "Marketing_Details": [
                 {
@@ -370,7 +370,7 @@ class create_incident:
                 }
                 for marketing in self.mongo_data[self.account_num]["Marketing_Details"]
             ] if self.mongo_data[self.account_num]["Marketing_Details"] else [],
-            
+
             "Action": self.mongo_data[self.account_num]["Action"],
             "Validity_period": self.mongo_data[self.account_num]["Validity_period"],
             "Remark": self.mongo_data[self.account_num]["Remark"],
@@ -380,14 +380,70 @@ class create_incident:
             "Arrears_Band": self.mongo_data[self.account_num]["Arrears_Band"],
             "Source_Type": self.mongo_data[self.account_num]["Source_Type"]
         }]
-        
+
         # Convert to serializable format and return as JSON string
         serializable_data = self.convert_to_serializable(json_data)
         return json.dumps(serializable_data, indent=4)
 
-if __name__ == "__main__":
-    incident = create_incident("0000003746", "3")
+    def send_to_api(self, json_output, api_url):
+        """
+        Sends the JSON output to the specified API endpoint.
+
+        :param json_output: The JSON data to send.
+        :param api_url: The URL of the API endpoint.
+        :return: The response from the API.
+        """
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+
+        try:
+            response = requests.post(api_url, data=json_output, headers=headers)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            return response.json()  # Return the JSON response from the API
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending data to API: {e}")
+            return None
+
+
+def process_incident(account_num, incident_id, api_url):
+    """
+    Processes the incident by reading customer details, getting payment data,
+    formatting the JSON object, and sending it to the API.
+
+    :param account_num: The account number.
+    :param incident_id: The incident ID.
+    :param api_url: The URL of the API endpoint.
+    """
+    # Create an instance of the create_incident class
+    incident = create_incident(account_num, incident_id)
+
+    # Read customer details
     incident.read_customer_details()
+
+    # Get payment data
     incident.get_payment_data()
+
+    # Format the JSON object
     json_output = incident.format_json_object()
-    print(json_output)
+    print("Formatted JSON Output:", json_output) # TODO: Debugging line - Remove this line later
+
+    # Send the JSON output to the API
+    api_response = incident.send_to_api(json_output, api_url)
+
+    if api_response:
+        print("API Response:", api_response)
+    else:
+        print("Failed to send data to the API.")
+
+
+# Main block to run the code
+if __name__ == "__main__":
+    # Define the account number, incident ID, and API URL
+    account_num = "0000003746"
+    incident_id = "3"
+    api_url = "http://220.247.224.226:9571/Request_Incident_External_information"  # Replace with your actual API URL
+
+    # Process the incident
+    process_incident(account_num, incident_id, api_url)
