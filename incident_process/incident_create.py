@@ -240,7 +240,7 @@ class create_incident:
         elif isinstance(data, Decimal):
             return float(data)
         elif data == "None" or data is None:
-            return None
+            return None # none
         else:
             return data
 
