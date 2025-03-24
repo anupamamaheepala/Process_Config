@@ -1,6 +1,7 @@
 import pymysql
 import configparser
 from utils.logger.logger import get_logger
+from utils.filePath.filePath import get_filePath
 
 logger = get_logger("connectSQL")
 
@@ -10,7 +11,7 @@ def get_mysql_connection():
     :return: A MySQL connection object.
     """
     config = configparser.ConfigParser()
-    config_file = "Config/databaseConfig.ini"
+    config_file = get_filePath("databaseConfig")
 
     try:
         config.read(config_file)
