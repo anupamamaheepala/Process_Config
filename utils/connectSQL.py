@@ -1,5 +1,8 @@
 import pymysql
 import configparser
+from utils.logger import get_logger
+
+logger = get_logger("connectSQL")
 
 def get_mysql_connection():
     """
@@ -16,7 +19,8 @@ def get_mysql_connection():
             user=config['DATABASE']['MYSQL_USER'],
             password=config['DATABASE']['MYSQL_PASSWORD']
         )
+        logger.info("Successfully connected to MySQL.")
         return connection
     except Exception as e:
-        print(f"Error connecting to MySQL: {e}")
+        logger.error(f"Error connecting to MySQL: {e}")
         return None
