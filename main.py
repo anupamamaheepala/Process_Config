@@ -1,4 +1,4 @@
-from incident_process import process_incident
+from incident_process.incident_create import process_incident
 
 if __name__ == "__main__":
     # Define the account number, incident ID, and API URL

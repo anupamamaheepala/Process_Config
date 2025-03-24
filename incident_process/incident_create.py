@@ -4,17 +4,12 @@ from decimal import Decimal  # Import Decimal
 import json  # Import JSON
 import pprint  # Import Pretty Print for debugging
 import requests  # Import the requests library for API calls
+from utils.connectSQL import get_mysql_connection
 
 class create_incident:
     account_num = None
     incident_id = None
     mongo_data = None
-    core_config = {
-        "mysql_host": "127.0.0.1",
-        "mysql_database": "drs",
-        "mysql_user": "root",
-        "mysql_password": ""
-    }
 
     def __init__(self, account_num, incident_id):  # Fixed method name
         self.account_num = account_num
@@ -72,12 +67,9 @@ class create_incident:
         mysql_conn = None
         cursor = None
         try:
-            mysql_conn = pymysql.connect(
-                host=self.core_config["mysql_host"],
-                database=self.core_config["mysql_database"],
-                user=self.core_config["mysql_user"],
-                password=self.core_config["mysql_password"]
-            )
+            mysql_conn = get_mysql_connection()
+            if not mysql_conn:
+                raise Exception("Failed to establish MySQL connection.")
             cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
             # ss = f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'"
             # print(ss)
@@ -214,12 +206,9 @@ class create_incident:
         cursor = None
         try:
             doc_status = "failure"
-            mysql_conn = pymysql.connect(
-                host=self.core_config["mysql_host"],
-                database=self.core_config["mysql_database"],
-                user=self.core_config["mysql_user"],
-                password=self.core_config["mysql_password"]
-            )
+            mysql_conn = get_mysql_connection()
+            if not mysql_conn:
+                raise Exception("Failed to establish MySQL connection.")
             cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
             cursor.execute(
                 f"SELECT * FROM debt_payment WHERE AP_ACCOUNT_NUMBER = '{self.account_num}' ORDER BY ACCOUNT_PAYMENT_DAT DESC LIMIT 1")
