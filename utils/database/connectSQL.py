@@ -1,6 +1,6 @@
 import pymysql
 import configparser
-from utils.logger import get_logger
+from utils.logger.logger import get_logger
 
 logger = get_logger("connectSQL")
 
@@ -10,9 +10,13 @@ def get_mysql_connection():
     :return: A MySQL connection object.
     """
     config = configparser.ConfigParser()
-    config.read(r'c:\Users\MSii\Downloads\Process_Config\config\DB_Config.ini')
+    config_file = "Config/databaseConfig.ini"
 
     try:
+        config.read(config_file)
+        if 'DATABASE' not in config:
+            raise KeyError(f"'DATABASE' section missing in {config_file}")
+
         connection = pymysql.connect(
             host=config['DATABASE']['MYSQL_HOST'],
             database=config['DATABASE']['MYSQL_DATABASE'],
@@ -21,6 +25,8 @@ def get_mysql_connection():
         )
         logger.info("Successfully connected to MySQL.")
         return connection
+    except KeyError as e:
+        logger.error(f"Configuration error: {e}")
     except Exception as e:
         logger.error(f"Error connecting to MySQL: {e}")
-        return None
+    return None

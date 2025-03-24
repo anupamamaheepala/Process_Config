@@ -4,7 +4,10 @@ from decimal import Decimal  # Import Decimal
 import json  # Import JSON
 import pprint  # Import Pretty Print for debugging
 import requests  # Import the requests library for API calls
-from utils.connectSQL import get_mysql_connection
+from utils.database.connectSQL import get_mysql_connection
+from utils.logger.logger import get_logger
+
+logger = get_logger("incident_logger")
 
 class create_incident:
     account_num = None
@@ -67,12 +70,12 @@ class create_incident:
         mysql_conn = None
         cursor = None
         try:
+            logger.info(f"Reading customer details for account number: {self.account_num}")
             mysql_conn = get_mysql_connection()
             if not mysql_conn:
-                raise Exception("Failed to establish MySQL connection.")
+                logger.error("MySQL connection failed. Skipping customer details retrieval.")
+                return "error"
             cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
-            # ss = f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'"
-            # print(ss)
             cursor.execute(f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'")
 
             rows = cursor.fetchall()
@@ -80,17 +83,11 @@ class create_incident:
                 customer_ref = row["CUSTOMER_REF"]
                 account_num = row["ACCOUNT_NUM"]
 
-                # print(type(self.mongo_data))
-                # pprint.pprint(self.mongo_data)
-
-                # created_by = data['0000003746']['Created_By']
                 Check_Val = self.mongo_data[self.account_num]["Account_Num"]
 
                 # Check if 'Created_By' is None
                 if Check_Val is None or Check_Val == 'None':
 
-                    # if self.mongo_data[self.account_num]["Account_Num"] is not None:
-                    # self.mongo_data[self.account_num]["customer_ref"] = customer_ref
                     self.mongo_data[self.account_num]["Account_Num"] = account_num
                     self.mongo_data[self.account_num]["incident_id"] = self.incident_id
 
@@ -190,9 +187,10 @@ class create_incident:
                 }
                 self.mongo_data[self.account_num]["Product_Details"].append(product_details_element)
 
+            logger.info("Successfully read customer details.")
             doc_status = "success"
         except Exception as e:
-            print(f"MySQL connection error in reading customer details: {e}")
+            logger.error(f"MySQL connection error in reading customer details: {e}")
             doc_status = "error"
         finally:
             if cursor:
@@ -205,10 +203,12 @@ class create_incident:
         mysql_conn = None
         cursor = None
         try:
-            doc_status = "failure"
+            logger.info(f"Getting payment data for account number: {self.account_num}")
             mysql_conn = get_mysql_connection()
             if not mysql_conn:
-                raise Exception("Failed to establish MySQL connection.")
+                logger.error("MySQL connection failed. Skipping payment data retrieval.")
+                return "failure"
+            doc_status = "failure"
             cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
             cursor.execute(
                 f"SELECT * FROM debt_payment WHERE AP_ACCOUNT_NUMBER = '{self.account_num}' ORDER BY ACCOUNT_PAYMENT_DAT DESC LIMIT 1")
@@ -228,9 +228,10 @@ class create_incident:
                 "Billed_Amount": pay_mny
             }
             self.mongo_data[self.account_num]["Last_Actions"].append(last_actions)
+            logger.info("Successfully retrieved payment data.")
             doc_status = "success"
         except Exception as e:
-            print(f"MySQL connection error in getting payment data: {e}")
+            logger.error(f"MySQL connection error in getting payment data: {e}")
         finally:
             if cursor:
                 cursor.close()
@@ -382,6 +383,7 @@ class create_incident:
         :param api_url: The URL of the API endpoint.
         :return: The response from the API.
         """
+        logger.info(f"Sending data to API: {api_url}")
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json"
@@ -390,9 +392,10 @@ class create_incident:
         try:
             response = requests.post(api_url, data=json_output, headers=headers)
             response.raise_for_status()  # Raise an exception for HTTP errors
+            logger.info("Successfully sent data to API.")
             return response.json()  # Return the JSON response from the API
         except requests.exceptions.RequestException as e:
-            print(f"Error sending data to API: {e}")
+            logger.error(f"Error sending data to API: {e}")
             return None
 
 
@@ -405,6 +408,7 @@ def process_incident(account_num, incident_id, api_url):
     :param incident_id: The incident ID.
     :param api_url: The URL of the API endpoint.
     """
+    logger.info(f"Processing incident for account number: {account_num}, incident ID: {incident_id}")
     # Create an instance of the create_incident class
     incident = create_incident(account_num, incident_id)
 
@@ -422,8 +426,10 @@ def process_incident(account_num, incident_id, api_url):
     api_response = incident.send_to_api(json_output, api_url)
 
     if api_response:
+        logger.info("Incident processed successfully.")
         print("API Response:", api_response)
     else:
+        logger.error("Failed to process incident.")
         print("Failed to send data to the API.")
 
 
