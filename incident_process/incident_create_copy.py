@@ -1,37 +1,47 @@
-import pymysql
-from datetime import datetime, date
-from decimal import Decimal
-import json
-import requests
+import pymysql  # Library for interacting with MySQL databases
+from datetime import datetime, date  # Modules for working with date and time
+from decimal import Decimal  # Module for handling precise decimal arithmetic
+import json  # Module for parsing and handling JSON data
+import requests  # Library for making HTTP requests
+
+# Import a function to establish a MySQL database connection
 from utils.database.connectSQL import get_mysql_connection
+
+# Import a function to configure and retrieve a logger for logging messages
 from utils.logger.logger import get_logger
+
+# Import a function to read API config
+from utils.api.connectAPI import read_api_config
+
 
 logger = get_logger("incident_logger")
 
 class create_incident:
-    """
-    A class to handle the creation and processing of incidents.
-    This includes fetching customer and payment details from a MySQL database,
-    formatting the data, and sending it to an API endpoint.
-    """
+    
     def __init__(self, account_num, incident_id):
         """
-        Initialize the create_incident object.
-
+        Constructor for the create_incident class.
+        
         Args:
-            account_num (str): The account number related to the incident.
-            incident_id (str): The unique incident ID.
+            account_num (str): The account number associated with the incident.
+            incident_id (int): The unique identifier for the incident.
+
+        Initializes the incident details and prepares a MongoDB document structure.
         """
-        self.account_num = account_num
-        self.incident_id = incident_id
+        self.account_num = str(account_num)
+        self.incident_id = int(incident_id)
         self.mongo_data = self.initialize_mongo_doc()
 
     def initialize_mongo_doc(self):
         """
-        Initialize the document structure with default values.
+        Initializes a MongoDB document structure for storing incident-related data.
+
+        Args:
+            account_num (str): The account number associated with the incident.
+            incident_id (int): The unique identifier for the incident.
 
         Returns:
-            dict: A dictionary representing the default incident structure.
+            dict: A structured dictionary to store incident-related data.
         """
         now = datetime.now().isoformat()
         return {
@@ -84,10 +94,10 @@ class create_incident:
 
     def read_customer_details(self):
         """
-        Fetch customer and account details from the database and store them in the incident document.
+        Reads customer details from the MySQL database and updates the MongoDB document.
 
         Returns:
-            str: "success" if customer details are retrieved successfully, otherwise "error".
+            str: "success" if the details were successfully retrieved and processed, otherwise "error".
         """
         mysql_conn = None
         cursor = None
@@ -211,10 +221,11 @@ class create_incident:
 
     def get_payment_data(self):
         """
-        Retrieve payment details from the MySQL database and update the incident document.
+        Retrieves the latest payment data for the given account number from the MySQL database
+        and updates the MongoDB document with last payment details.
 
         Returns:
-            str: "success" if payment data is retrieved successfully, otherwise "failure".
+            str: "success" if the payment data was retrieved and processed, otherwise "failure".
         """
         mysql_conn = None
         cursor = None
@@ -254,7 +265,11 @@ class create_incident:
                 mysql_conn.close()
 
     def format_json_object(self):
-        """Format the data as a JSON-compatible dictionary with API requirements"""
+        """
+        Formats the incident data into a JSON string with proper data types.
+
+        :return: A formatted JSON string with properly serialized values.
+        """
         # Create a deep copy to avoid modifying original data
         json_data = json.loads(json.dumps(self.mongo_data, default=self.json_serializer))
         
@@ -265,7 +280,13 @@ class create_incident:
         return json.dumps(json_data, indent=4)
 
     def json_serializer(self, obj):
-        """JSON serializer for objects not serializable by default json code"""
+        """
+        Custom JSON serializer for handling datetime, Decimal, and None values.
+
+        :param obj: The object to serialize.
+        :return: Serialized value as a string or float.
+        :raises TypeError: If an unsupported type is encountered.
+        """
         if isinstance(obj, (datetime, date)):
             return obj.isoformat()
         if isinstance(obj, Decimal):
@@ -276,14 +297,11 @@ class create_incident:
 
     def send_to_api(self, json_output, api_url):
         """
-        Send JSON data to a specified API endpoint.
+        Sends the formatted JSON data to a specified API endpoint.
 
-        Args:
-            json_output (str): The formatted JSON data to be sent.
-            api_url (str): The target API endpoint URL.
-
-        Returns:
-            dict: The API response in JSON format if successful, otherwise None.
+        :param json_output: The JSON string to send.
+        :param api_url: The URL of the API endpoint.
+        :return: The API response as a dictionary if successful, otherwise None.
         """
         logger.info(f"Sending data to API: {api_url}")
         headers = {
@@ -303,36 +321,57 @@ class create_incident:
             return None
 
 
-def process_incident(account_num, incident_id, api_url):
+def process_incident(account_num, incident_id):
     """
-    Process an incident by retrieving customer and payment details, formatting them,
-    and sending the data to an API.
-
-    Args:
-        account_num (str): The account number associated with the incident.
-        incident_id (str): The unique identifier of the incident.
-        api_url (str): The API endpoint URL to send data.
-
+    Processes a debt collection incident by gathering customer/payment data and sending to API.
+    
+    This function:
+    1. Creates a new incident record
+    2. Retrieves mandatory customer details from MySQL
+    3. Retrieves optional payment data if customer exists
+    4. Formats the data as JSON
+    5. Sends to the configured API endpoint
+    
+    Parameters:
+        account_num (str): The customer's account number to process.
+                           Must be a valid account number present in the database.
+                           
+        incident_id (int): Unique identifier for the new incident.
+                          Must be a positive integer.
+    
     Returns:
-        bool: True if processing was successful, False otherwise.
+        bool: 
+            - True if incident was successfully created and sent to API
+            - False if:
+                * No customer details found
+                * Database query failed
+                * API communication failed
     """
     logger.info(f"Processing incident for account number: {account_num}, incident ID: {incident_id}")
+    api_url = read_api_config()
     incident = create_incident(account_num, incident_id)
     
-    # Read data from both tables
+    # 1. FIRST CHECK CUSTOMER DETAILS - EXIT IF NONE FOUND
     customer_status = incident.read_customer_details()
+    
+    # If customer query failed OR no customer details exist -> exit immediately
+    if customer_status != "success" or not incident.mongo_data["Customer_Details"]:
+        logger.error(f"No customer details found for account {account_num}. Aborting incident creation.")
+        return False
+    
+    # 2. ONLY CHECK PAYMENTS IF CUSTOMER DETAILS EXIST
     payment_status = incident.get_payment_data()
     
-    if customer_status == "success" or payment_status == "success":
-        json_output = incident.format_json_object()
-        print("Formatted JSON Output:", json_output)
-        
-        api_response = incident.send_to_api(json_output, api_url)
-        if api_response:
-            logger.info("Incident processed successfully.")
-            print("API Response:", api_response)
-            return True
+    # Format and send data (we already know customer details exist)
+    json_output = incident.format_json_object()
+    print("Formatted JSON Output:", json_output)
     
-    logger.error("Failed to process incident.")
+    api_response = incident.send_to_api(json_output, api_url)
+    if api_response:
+        logger.info("Incident processed successfully.")
+        print("API Response:", api_response)
+        return True
+    
+    logger.error("Failed to send incident data to API")
     return False
 

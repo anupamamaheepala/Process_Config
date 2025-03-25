@@ -17,6 +17,7 @@ class create_incident:
     account_num = None
     incident_id = None
     mongo_data = None
+    api_url = read_api_config()
 
     def __init__(self, account_num, incident_id):
         """
@@ -477,7 +478,7 @@ class create_incident:
             return None
 
 
-def process_incident(account_num, incident_id, api_url):
+def process_incident(account_num, incident_id):
     """
     Processes an incident by gathering necessary details, formatting the data as JSON,
     and sending it to the API.
@@ -485,17 +486,12 @@ def process_incident(account_num, incident_id, api_url):
     Args:
         account_num (str): The account number associated with the incident.
         incident_id (str): The unique ID of the incident.
-        api_url (str): The URL of the API to which the request will be sent.
 
     Returns:
         None: This function does not return anything.
-    
-    This function is used to manage the entire incident processing workflow.
-    It gathers customer details, payment data, formats the data into JSON, and sends it to the API.
-    The success or failure of the API request is logged.
     """
-    
     logger.info(f"Processing incident for account: {account_num}, ID: {incident_id}")
+    api_url = read_api_config()  # Retrieve the API URL internally
     incident = create_incident(account_num, incident_id)
 
     # Only proceed if account data exists
