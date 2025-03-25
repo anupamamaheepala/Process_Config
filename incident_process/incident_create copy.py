@@ -117,11 +117,6 @@ class create_incident:
             cursor.execute(f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'")
 
             rows = cursor.fetchall()
-            
-            if not rows:  # No account data found
-                logger.error(f"No customer details found for account {self.account_num}")
-                return False
-            
             # Iterate over each row and process customer data
             for row in rows:
                 customer_ref = row["CUSTOMER_REF"]
@@ -494,28 +489,28 @@ def process_incident(account_num, incident_id, api_url):
     The success or failure of the API request is logged.
     """
     
-    logger.info(f"Processing incident for account: {account_num}, ID: {incident_id}")
+    logger.info(f"Processing incident for account number: {account_num}, incident ID: {incident_id}")
+    # Create an instance of the create_incident class
     incident = create_incident(account_num, incident_id)
 
-    # Only proceed if account data exists
-    if incident.read_customer_details():
-        # Get payment data (will handle its own error cases)
-        payment_status = incident.get_payment_data()
-        if payment_status == "error":
-            logger.error("Failed to retrieve payment data - proceeding without it")
-        
-        # Format and send data
-        json_output = incident.format_json_object()
-        print("Formatted JSON Output:", json_output)
-        
-        api_response = incident.send_to_api(json_output, api_url)
-        if api_response:
-            logger.info("Incident processed successfully.")
-            print("API Response:", api_response)
-        else:
-            logger.error("Failed to send data to API.")
+    # Read customer details
+    incident.read_customer_details()
+
+    # Get payment data
+    incident.get_payment_data()
+
+    # Format the JSON object
+    json_output = incident.format_json_object()
+    print("Formatted JSON Output:", json_output) # TODO: Debugging line - Remove this line later
+
+    # Send the JSON output to the API
+    api_response = incident.send_to_api(json_output, api_url)
+
+    if api_response:
+        logger.info("Incident processed successfully.")
+        print("API Response:", api_response)
     else:
-        logger.error(f"No account data found for {account_num} - process terminated")
-        print(f"No account data found for {account_num} - process terminated")
+        logger.error("Failed to process incident.")
+        print("Failed to send data to the API.")
 
 
