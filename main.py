@@ -1,5 +1,3 @@
-import configparser
-import sys
 from incident_process.incident_create_copy import process_incident
 from utils.api.connectAPI import read_api_config
 
