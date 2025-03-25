@@ -84,7 +84,7 @@ class create_incident:
 
     def read_customer_details(self):
         """
-        Fetch customer and account details from the MySQL database and store them in the incident document.
+        Fetch customer and account details from the database and store them in the incident document.
 
         Returns:
             str: "success" if customer details are retrieved successfully, otherwise "error".
@@ -201,7 +201,7 @@ class create_incident:
             return "success"
 
         except Exception as e:
-            logger.error(f"MySQL connection error in reading customer details: {e}")
+            logger.error(f"Error : {e}")
             return "error"
         finally:
             if cursor:
@@ -245,7 +245,7 @@ class create_incident:
             return "failure"
 
         except Exception as e:
-            logger.error(f"MySQL connection error in getting payment data: {e}")
+            logger.error(f"Error : {e}")
             return "failure"
         finally:
             if cursor:

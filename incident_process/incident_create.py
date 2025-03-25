@@ -1,11 +1,14 @@
-import pymysql  # Import MySQL Connector
-from datetime import datetime, date  # Import Date and Time
-from decimal import Decimal  # Import Decimal
-import json  # Import JSON
-import pprint  # Import Pretty Print for debugging
-import requests  # Import the requests library for API calls
-from utils.database.connectSQL import get_mysql_connection
-from utils.logger.logger import get_logger
+import pymysql  # MySQL connector for interacting with a MySQL database.
+from datetime import datetime, date  # Used for handling date and time operations.
+from decimal import Decimal  # Provides precise decimal representation for financial and database-related calculations.
+import json  # Enables working with JSON data (serialization and deserialization).
+import pprint  # Pretty-printing tool for better debugging and readable data structures.
+import requests  # Used for making HTTP requests, commonly for APIs or external services.
+
+# Custom utility modules
+from utils.database.connectSQL import get_mysql_connection  # Function to establish a connection to the MySQL database.
+from utils.logger.logger import get_logger  # Logger utility for handling application logs.
+
 
 logger = get_logger("incident_logger")
 
@@ -14,19 +17,45 @@ class create_incident:
     incident_id = None
     mongo_data = None
 
-    def __init__(self, account_num, incident_id):  # Fixed method name
-        self.account_num = account_num
-        self.incident_id = incident_id
+    def __init__(self, account_num, incident_id):
+        """
+        Constructor for the create_incident class.
+        
+        Args:
+            account_num (str): The account number associated with the incident.
+            incident_id (int): The unique identifier for the incident.
+
+        Initializes the incident details and prepares a MongoDB document structure.
+        """
+        self.account_num = str(account_num)
+        self.incident_id = int(incident_id)
         self.mongo_data = self.initialize_mongo_doc(account_num, incident_id)
 
     def create_incident(self, payload):
+        """
+        Creates an incident using the provided payload.
+
+        Args:
+            payload (dict): JSON data containing incident details.
+
+        This method currently reads customer details.
+        """
         status = self.read_customer_details()
         # if status == "success":
         #     self.read_payment_details()
         # return self.client.post("/incidents", json=payload)
 
     def initialize_mongo_doc(self, account_num, incident_id):
-        # Initialize mongo_data as an empty dictionary
+        """
+        Initializes a MongoDB document structure for storing incident-related data.
+
+        Args:
+            account_num (str): The account number associated with the incident.
+            incident_id (int): The unique identifier for the incident.
+
+        Returns:
+            dict: A structured dictionary to store incident-related data.
+        """
         self.mongo_data = {
             account_num: {
                 "Doc_Version": "1.0",
@@ -67,22 +96,33 @@ class create_incident:
         return self.mongo_data
 
     def read_customer_details(self):
+        """
+        Reads customer details from the MySQL database and updates the MongoDB document.
+
+        Returns:
+            str: "success" if the details were successfully retrieved and processed, otherwise "error".
+        """
         mysql_conn = None
         cursor = None
         try:
             logger.info(f"Reading customer details for account number: {self.account_num}")
+            # Establish a MySQL connection
             mysql_conn = get_mysql_connection()
             if not mysql_conn:
                 logger.error("MySQL connection failed. Skipping customer details retrieval.")
                 return "error"
+            # Create a cursor to execute SQL queries
             cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
+            # Fetch customer details based on the account number
             cursor.execute(f"SELECT * FROM debt_cust_detail WHERE ACCOUNT_NUM = '{self.account_num}'")
 
             rows = cursor.fetchall()
+            # Iterate over each row and process customer data
             for row in rows:
                 customer_ref = row["CUSTOMER_REF"]
                 account_num = row["ACCOUNT_NUM"]
 
+                # Check if account number already exists in MongoDB data
                 Check_Val = self.mongo_data[self.account_num]["Account_Num"]
 
                 # Check if 'Created_By' is None
@@ -190,16 +230,24 @@ class create_incident:
             logger.info("Successfully read customer details.")
             doc_status = "success"
         except Exception as e:
-            logger.error(f"MySQL connection error in reading customer details: {e}")
+            logger.error(f"Error: {e}")
             doc_status = "error"
         finally:
+            # Ensure database resources are properly closed
             if cursor:
                 cursor.close()
             if mysql_conn:
                 mysql_conn.close()
-        return doc_status
+        return doc_status # Return the status of the operation
 
     def get_payment_data(self):
+        """
+        Retrieves the latest payment data for the given account number from the MySQL database
+        and updates the MongoDB document with last payment details.
+
+        Returns:
+            str: "success" if the payment data was retrieved and processed, otherwise "failure".
+        """
         mysql_conn = None
         cursor = None
         try:
@@ -231,7 +279,7 @@ class create_incident:
             logger.info("Successfully retrieved payment data.")
             doc_status = "success"
         except Exception as e:
-            logger.error(f"MySQL connection error in getting payment data: {e}")
+            logger.error(f"Error: {e}")
         finally:
             if cursor:
                 cursor.close()
@@ -240,6 +288,16 @@ class create_incident:
         return doc_status
 
     def convert_to_serializable(self, data):
+        """
+        Recursively converts non-serializable data types (datetime, date, Decimal) 
+        into JSON-serializable formats.
+
+        Args:
+            data (any): The data to be converted.
+
+        Returns:
+            any: The converted data with serializable types.
+        """
         # Convert datetime, date, and Decimal objects to strings or floats
         if isinstance(data, dict):
             return {key: self.convert_to_serializable(value) for key, value in data.items()}
@@ -253,6 +311,13 @@ class create_incident:
             return data
 
     def format_json_object(self):
+        """
+        Formats the MongoDB data into a JSON-compatible structure by simplifying nested data 
+        and converting non-serializable objects like datetime into serializable formats.
+        
+        Returns:
+            str: JSON string representation of the formatted data.
+        """
         # Prepare the MongoDB data as a JSON-compatible dictionary with simplified structure
         json_data = [{
             "Doc_Version": self.mongo_data[self.account_num]["Doc_Version"],
@@ -377,12 +442,19 @@ class create_incident:
 
     def send_to_api(self, json_output, api_url):
         """
-        Sends the JSON output to the specified API endpoint.
+        Sends a POST request to an API with the given JSON data.
 
-        :param json_output: The JSON data to send.
-        :param api_url: The URL of the API endpoint.
-        :return: The response from the API.
+        Args:
+            json_output (dict): The data to be sent to the API in JSON format.
+            api_url (str): The URL of the API to which the request will be sent.
+
+        Returns:
+            dict | None: Returns the JSON response from the API if successful, or None if there was an error.
+        
+        This function is used to send data to an external API and handle any potential errors that may occur during the request.
+        It logs the success or failure of the operation based on the outcome.
         """
+        
         logger.info(f"Sending data to API: {api_url}")
         headers = {
             "Content-Type": "application/json",
@@ -401,13 +473,22 @@ class create_incident:
 
 def process_incident(account_num, incident_id, api_url):
     """
-    Processes the incident by reading customer details, getting payment data,
-    formatting the JSON object, and sending it to the API.
+    Processes an incident by gathering necessary details, formatting the data as JSON,
+    and sending it to the API.
 
-    :param account_num: The account number.
-    :param incident_id: The incident ID.
-    :param api_url: The URL of the API endpoint.
+    Args:
+        account_num (str): The account number associated with the incident.
+        incident_id (str): The unique ID of the incident.
+        api_url (str): The URL of the API to which the request will be sent.
+
+    Returns:
+        None: This function does not return anything.
+    
+    This function is used to manage the entire incident processing workflow.
+    It gathers customer details, payment data, formats the data into JSON, and sends it to the API.
+    The success or failure of the API request is logged.
     """
+    
     logger.info(f"Processing incident for account number: {account_num}, incident ID: {incident_id}")
     # Create an instance of the create_incident class
     incident = create_incident(account_num, incident_id)
