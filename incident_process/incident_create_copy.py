@@ -9,13 +9,30 @@ from utils.logger.logger import get_logger
 logger = get_logger("incident_logger")
 
 class create_incident:
+    """
+    A class to handle the creation and processing of incidents.
+    This includes fetching customer and payment details from a MySQL database,
+    formatting the data, and sending it to an API endpoint.
+    """
     def __init__(self, account_num, incident_id):
+        """
+        Initialize the create_incident object.
+
+        Args:
+            account_num (str): The account number related to the incident.
+            incident_id (str): The unique incident ID.
+        """
         self.account_num = account_num
         self.incident_id = incident_id
         self.mongo_data = self.initialize_mongo_doc()
 
     def initialize_mongo_doc(self):
-        """Initialize the document structure with proper defaults"""
+        """
+        Initialize the document structure with default values.
+
+        Returns:
+            dict: A dictionary representing the default incident structure.
+        """
         now = datetime.now().isoformat()
         return {
             "Doc_Version": "1.0",
@@ -66,6 +83,12 @@ class create_incident:
         }
 
     def read_customer_details(self):
+        """
+        Fetch customer and account details from the MySQL database and store them in the incident document.
+
+        Returns:
+            str: "success" if customer details are retrieved successfully, otherwise "error".
+        """
         mysql_conn = None
         cursor = None
         try:
@@ -187,6 +210,12 @@ class create_incident:
                 mysql_conn.close()
 
     def get_payment_data(self):
+        """
+        Retrieve payment details from the MySQL database and update the incident document.
+
+        Returns:
+            str: "success" if payment data is retrieved successfully, otherwise "failure".
+        """
         mysql_conn = None
         cursor = None
         try:
@@ -246,7 +275,16 @@ class create_incident:
         raise TypeError(f"Type {type(obj)} not serializable")
 
     def send_to_api(self, json_output, api_url):
-        """Send JSON data to API endpoint."""
+        """
+        Send JSON data to a specified API endpoint.
+
+        Args:
+            json_output (str): The formatted JSON data to be sent.
+            api_url (str): The target API endpoint URL.
+
+        Returns:
+            dict: The API response in JSON format if successful, otherwise None.
+        """
         logger.info(f"Sending data to API: {api_url}")
         headers = {
             "Content-Type": "application/json",
@@ -266,7 +304,18 @@ class create_incident:
 
 
 def process_incident(account_num, incident_id, api_url):
-    """Process incident and send data to API."""
+    """
+    Process an incident by retrieving customer and payment details, formatting them,
+    and sending the data to an API.
+
+    Args:
+        account_num (str): The account number associated with the incident.
+        incident_id (str): The unique identifier of the incident.
+        api_url (str): The API endpoint URL to send data.
+
+    Returns:
+        bool: True if processing was successful, False otherwise.
+    """
     logger.info(f"Processing incident for account number: {account_num}, incident ID: {incident_id}")
     incident = create_incident(account_num, incident_id)
     
