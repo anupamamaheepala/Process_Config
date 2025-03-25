@@ -34,14 +34,29 @@ class create_incident:
 
     def initialize_mongo_doc(self):
         """
-        Initializes a MongoDB document structure for storing incident-related data.
+        Creates and initializes a standardized MongoDB document structure for incident.
 
-        Args:
-            account_num (str): The account number associated with the incident.
-            incident_id (int): The unique identifier for the incident.
+        This template document:
+        - Establishes all required fields with default values
+        - Sets proper initial timestamps
+        - Provides empty containers for related data
+        - Ensures consistent field types across all incidents
+
+        Structure Overview:
+        1. Metadata: Versioning, IDs, timestamps
+        2. Core Incident Data: Status, descriptions
+        3. Financial Data: Arrears, payment info
+        4. Relationship Containers: Contacts, products
+        5. System Fields: Audit trails, rejection info
 
         Returns:
-            dict: A structured dictionary to store incident-related data.
+            dict: A complete document structure with these guaranteed characteristics:
+                - All fields initialized (no undefined fields)
+                - String fields: Empty string defaults ("")
+                - Numeric fields: "0" or 0 defaults
+                - Dates: Current ISO timestamp or "1900-01-01" placeholder
+                - Collections: Empty lists/dicts initialized
+                - All timestamps in ISO8601 format
         """
         now = datetime.now().isoformat()
         return {
@@ -94,10 +109,55 @@ class create_incident:
 
     def read_customer_details(self):
         """
-        Reads customer details from the MySQL database and updates the MongoDB document.
+        Retrieves and processes customer account data from MySQL, transforming it into MongoDB document structure.
+
+        This method performs three key operations:
+        1. Fetches all customer records for the specified account number
+        2. Transforms relational MySQL data into document-oriented MongoDB structure
+        3. Handles data quality issues and type conversions
+
+        Data Flow:
+        MySQL (debt_cust_detail table) → Python Dict → mongo_data structure
 
         Returns:
-            str: "success" if the details were successfully retrieved and processed, otherwise "error".
+            str: 
+                - "success" if:
+                    * Data was successfully retrieved AND
+                    * Customer_Details was populated AND
+                    * No unhandled exceptions occurred
+                - "error" if:
+                    * MySQL connection failed OR
+                    * SQL execution failed OR
+                    * Any exception occurred during processing
+
+        Database Requirements:
+            Requires MySQL table 'debt_cust_detail' with columns:
+            - ACCOUNT_NUM (account identifier)
+            - ASSET_ID (product identifier)
+            - CONTACT_PERSON, NIC, ASSET_ADDRESS (customer info)
+            - ACCOUNT_STATUS_BSS, EMAIL (account info)
+            - LAST_PAYMENT_DAT, LAST_PAYMENT_MNY (payment info)
+            - PROMOTION_INTEG_ID, PRODUCT_NAME (product info)
+
+        Field Processing Rules:
+            1. Strings: 
+                - Empty strings for missing values
+                - str() conversion for numeric IDs
+            2. Dates:
+                - ISO8601 format when present
+                - "1900-01-01T00:00:00" default for required dates
+            3. Contacts:
+                - Validated email format ("@" check)
+                - Separate entries for each contact type
+            4. Products:
+                - Deduplicated by ASSET_ID
+                - All string fields guaranteed non-None
+
+        Error Handling:
+            - Returns "error" for any exception
+            - Logs full error details
+            - Safely closes database resources
+            - Maintains empty structures on failure
         """
         mysql_conn = None
         cursor = None
@@ -221,11 +281,41 @@ class create_incident:
 
     def get_payment_data(self):
         """
-        Retrieves the latest payment data for the given account number from the MySQL database
-        and updates the MongoDB document with last payment details.
+        Retrieves and processes the most recent payment record for the account from MySQL.
+
+        This method:
+        1. Establishes a MySQL connection
+        2. Executes a query to fetch the latest payment
+        3. Updates the in-memory MongoDB document structure
+        4. Handles all potential failure scenarios gracefully
+
+        Data Flow:
+        MySQL (debt_payment table) → Python dict → mongo_data["Last_Actions"]
 
         Returns:
-            str: "success" if the payment data was retrieved and processed, otherwise "failure".
+            str: 
+                - "success" if:
+                    * Payment data was found AND
+                    * Successfully processed AND
+                    * mongo_data was updated
+                - "failure" if:
+                    * MySQL connection failed OR
+                    * No payment records found OR
+                    * Any exception occurred
+
+        Error Handling:
+            - Catches all exceptions and returns "failure"
+            - Logs detailed error messages including:
+                * Connection failures
+                * Query execution errors
+                * Data processing issues
+
+        Database Requirements:
+            Requires MySQL table 'debt_payment' with columns:
+            - AP_ACCOUNT_NUMBER (account identifier)
+            - ACCOUNT_PAYMENT_SEQ (payment sequence)
+            - ACCOUNT_PAYMENT_DAT (payment datetime)
+            - AP_ACCOUNT_PAYMENT_MNY (payment amount)
         """
         mysql_conn = None
         cursor = None
@@ -266,9 +356,29 @@ class create_incident:
 
     def format_json_object(self):
         """
-        Formats the incident data into a JSON string with proper data types.
+        Transforms the incident data into a well-formatted JSON string with type consistency.
 
-        :return: A formatted JSON string with properly serialized values.
+        This method performs three key operations:
+        1. Creates a safe deep copy of the source data to prevent modification
+        2. Enforces type consistency on critical fields (Nic, Email_Address)
+        3. Generates human-readable JSON with proper indentation
+
+        Process Flow:
+        1. Serialize → Deserialize cycle creates an isolated copy of mongo_data
+        2. Validates and converts specific fields to required string format
+        3. Applies consistent JSON formatting with 4-space indentation
+
+        Returns:
+            str: 
+                A prettified JSON string with these guaranteed characteristics:
+                - Nic field always exists as string (empty string if missing/null)
+                - Email_Address field always exists as string (empty string if missing/null)
+                - 4-space indentation for human readability
+                - All datetime/Decimal/None values properly converted via json_serializer
+
+        Raises:
+            JSONEncodeError: If the data contains unserializable types not handled by json_serializer
+            KeyError: If Customer_Details or Account_Details structures are missing entirely
         """
         # Create a deep copy to avoid modifying original data
         json_data = json.loads(json.dumps(self.mongo_data, default=self.json_serializer))
@@ -281,11 +391,39 @@ class create_incident:
 
     def json_serializer(self, obj):
         """
-        Custom JSON serializer for handling datetime, Decimal, and None values.
+        Custom JSON serializer that handles non-native JSON types in Python objects.
 
-        :param obj: The object to serialize.
-        :return: Serialized value as a string or float.
-        :raises TypeError: If an unsupported type is encountered.
+        Converts specific Python types to JSON-compatible formats:
+        - datetime/date → ISO8601 strings
+        - Decimal → float
+        - None → empty string
+
+        Parameters:
+            obj (any): 
+                The Python object to be serialized. Expected types:
+                - datetime.datetime or datetime.date objects
+                - decimal.Decimal objects
+                - None/null values
+                - NOTE: Other types will raise TypeError
+
+        Returns:
+            str or float:
+                - For datetime/date: ISO8601 formatted string (e.g., "2023-01-01T00:00:00")
+                - For Decimal: Converted to float (e.g., Decimal("10.5") → 10.5)
+                - For None: Returns empty string ("")
+
+        Raises:
+            TypeError: 
+                When encountering unsupported types. The error message includes:
+                - The problematic type encountered
+                - Example: "Type <class 'set'> not serializable"
+
+        Notes:
+            1. This serializer is designed to work with json.dumps() as its 'default' handler
+            2. Native JSON types (int, float, str, list, dict, bool) are automatically
+            handled by Python's built-in json module and won't reach this serializer
+            3. The empty string conversion for None helps maintain schema consistency
+            in APIs that expect strings rather than null values
         """
         if isinstance(obj, (datetime, date)):
             return obj.isoformat()
@@ -297,11 +435,34 @@ class create_incident:
 
     def send_to_api(self, json_output, api_url):
         """
-        Sends the formatted JSON data to a specified API endpoint.
+        Sends JSON data to a specified API endpoint via HTTP POST request.
 
-        :param json_output: The JSON string to send.
-        :param api_url: The URL of the API endpoint.
-        :return: The API response as a dictionary if successful, otherwise None.
+        Handles the entire API communication lifecycle including:
+        - Setting proper JSON headers
+        - Making the HTTP request
+        - Processing successful responses
+        - Handling and logging errors
+
+        Parameters:
+            json_output (str): 
+                The JSON-formatted string to send. 
+                Must be valid JSON that conforms to the API's schema requirements.
+                Example: '{"key": "value"}' (properly formatted string)
+
+            api_url (str): 
+                The complete URL of the API endpoint.
+
+        Returns:
+            dict or None: 
+                - On success: Returns the API response parsed as a Python dictionary
+                - On failure: Returns None and logs detailed error information
+
+        Raises:
+            No explicit exceptions raised, but handles and logs these request exceptions:
+            - ConnectionError: Network problems (DNS, refused connection, etc.)
+            - HTTPError: HTTP 4XX/5XX responses
+            - Timeout: Request timeout
+            - RequestException: Other request-related exceptions
         """
         logger.info(f"Sending data to API: {api_url}")
         headers = {
