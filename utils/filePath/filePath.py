@@ -42,6 +42,7 @@ def get_filePath(key):
             "logConfig": "LogConfigFile_path",
             "databaseConfig": "DatabaseConfigFile_path",
             "filePathConfig": "FilePathConfigFile_path",
+            "apiConfig": "ApiConfigFile_path"  
         }
 
         # Retrieve section name
@@ -55,6 +56,7 @@ def get_filePath(key):
             path = config[section].get(requested_key, "").strip()
 
             if not path:
+                logger.error(f"Key '{requested_key}' not found in section '{section}'. Configuration file: {config_file_path}")
                 raise KeyError(f"Key '{requested_key}' not found in section '{section}'.")
 
             return Path(path)  # Return as Path object for consistency
