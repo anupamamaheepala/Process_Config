@@ -24,18 +24,18 @@ def get_filePath(key):
         project_root = get_project_root()
 
         # Construct the config file path
-        config_file_path = project_root / "Config" / "filePathConfig.ini"
+        config_file_path = project_root / "Config" / "filePathConfig.ini" 
 
         if not config_file_path.is_file():
             raise FileNotFoundError(f"Configuration file '{config_file_path}' not found.")
 
-        config.read(str(config_file_path))  # Ensure path is read as a string
+        config.read(str(config_file_path))  # read content of filePathConfig.ini
 
         # Determine the operating system
         os_type = platform.system().lower()  # 'windows' or 'linux'
 
         # Map OS type to key suffix
-        os_suffix = "WIN" if os_type == 'windows' else "LIN"
+        os_suffix = "WIN" if os_type == 'windows' else "LIN" # change this into preffix
 
         # Define section mappings
         section_mapping = {
