@@ -493,11 +493,10 @@ class create_incident:
                 payment_status = self.get_payment_data()  # Failure tolerated
                 if payment_status != "success":
                     logger.warning(f"Failed to retrieve payment data for account {self.account_num}")
-                    # Continue even if payment data fails as it's not critical
-                
+                    return False
+                    
                 # 3. Format and Send to API
                 json_output = self.format_json_object()
-                logger.debug(f"Formatted JSON output: {json_output}")
                 print(json_output)  # For debugging purposes
                 
                 api_url = read_api_config()
