@@ -28,10 +28,20 @@ class create_incident:
             account_num (str): The account number associated with the incident.
             incident_id (int): The unique identifier for the incident.
 
-        Initializes the incident details and prepares a MongoDB document structure.
+        Raises:
+            ValueError: If either account_num or incident_id fails conversion.
         """
-        self.account_num = str(account_num) # check null before str conversion
-        self.incident_id = int(incident_id) # check null before int conversion
+        try:
+            if account_num is None:
+                raise ValueError("account_num cannot be None")
+            self.account_num = str(account_num)
+
+            if incident_id is None:
+                raise ValueError("incident_id cannot be None")
+            self.incident_id = int(incident_id)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Invalid input: {e}")
+        
         self.mongo_data = self.initialize_mongo_doc()
 
     def initialize_mongo_doc(self):
@@ -452,77 +462,62 @@ class create_incident:
             return None
 
 
-def process_incident(account_num, incident_id):
-    """
-    Processes a debt collection incident by gathering customer/payment data and sending to API.
-    
-    This function:
-    1. Creates a new incident record
-    2. Retrieves customer details from MySQL
-    3. Retrieves optional payment data if customer exists
-    4. Formats the data as JSON
-    5. Sends to the configured API endpoint
-    
-    Parameters:
-        account_num (str): The customer's account number to process.
-                           Must be a valid account number present in the database.
-                           
-        incident_id (int): Unique identifier for the new incident.
-                          Must be a positive integer.
-    
-    Returns:
-        bool: 
-            - True if incident was successfully created and sent to API
-            - False if:
-                * No customer details found
-                * Database query failed
-                * API communication failed
-    """
-    try:
-        logger.info(f"Processing incident for account: {account_num}, ID: {incident_id}")
-        
-        # 1. Create Incident (may raise IncidentCreationError)
-        incident = create_incident(account_num, incident_id)
-        
-        # 2. Retrieve Customer Details (critical failure if missing)
-        customer_status = incident.read_customer_details()
-        if customer_status != "success" or not incident.mongo_data["Customer_Details"]:
-            logger.error(f"No customer details found for account {account_num}")
-            return False
-        
-        # 3. Optional: Retrieve Payment Data
-        payment_status = incident.get_payment_data()  # Failure tolerated
-        # handle payment data errors
-        
-        # 4. Format and Send to API
-        json_output = incident.format_json_object()
-        print(json_output)  # For debugging
-        #instead of print use logger console print
-        
-        try: # use only one try earlier
-            api_url = read_api_config()
-            if not api_url:
-                raise APIConfigError("Empty API URL in config")
-                
-            api_response = incident.send_to_api(json_output, api_url)
-            if not api_response:
-                raise IncidentCreationError("Empty API response")
-                
-            logger.info(f"API Success: {api_response}")
-            return True
+    def process_incident(self):
+            """
+            Processes a debt collection incident by gathering customer/payment data and sending to API.
             
-        except FileNotFoundError as e:
-            raise APIConfigError(f"Missing config file: {e}") from e
-        except requests.exceptions.RequestException as e:
-            raise IncidentCreationError(f"API request failed: {e}") from e
+            This method:
+            1. Retrieves customer details from MySQL (already done in initialization)
+            2. Retrieves optional payment data if customer exists
+            3. Formats the data as JSON
+            4. Sends to the configured API endpoint
             
-    except IncidentCreationError as e:
-        logger.error(f"Incident processing failed: {e}")
-        return False
-    except APIConfigError as e:
-        logger.critical(f"Configuration error: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}", exc_info=True)
-        return False
+            Returns:
+                bool: 
+                    - True if incident was successfully created and sent to API
+                    - False if:
+                        * No customer details found
+                        * Database query failed
+                        * API communication failed
+            """
+            try:
+                logger.info(f"Processing incident for account: {self.account_num}, ID: {self.incident_id}")
+                
+                # 1. Retrieve Customer Details (critical failure if missing)
+                customer_status = self.read_customer_details()
+                if customer_status != "success" or not self.mongo_data["Customer_Details"]:
+                    logger.error(f"No customer details found for account {self.account_num}")
+                    return False
+                
+                # 2. Optional: Retrieve Payment Data
+                payment_status = self.get_payment_data()  # Failure tolerated
+                if payment_status != "success":
+                    logger.warning(f"Failed to retrieve payment data for account {self.account_num}")
+                    # Continue even if payment data fails as it's not critical
+                
+                # 3. Format and Send to API
+                json_output = self.format_json_object()
+                logger.debug(f"Formatted JSON output: {json_output}")
+                print(json_output)  # For debugging purposes
+                
+                api_url = read_api_config()
+                if not api_url:
+                    raise APIConfigError("Empty API URL in config")
+                        
+                api_response = self.send_to_api(json_output, api_url)
+                if not api_response:
+                    raise IncidentCreationError("Empty API response")
+                        
+                logger.info(f"API Success: {api_response}")
+                return True
+                
+            except IncidentCreationError as e:
+                logger.error(f"Incident processing failed: {e}")
+                return False
+            except APIConfigError as e:
+                logger.error(f"Configuration error: {e}")
+                return False
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}", exc_info=True)
+                return False
 

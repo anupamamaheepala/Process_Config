@@ -5,3 +5,7 @@ class APIConfigError(Exception):
 class IncidentCreationError(Exception):
     """Raised when incident creation fails."""
     pass
+
+class PaymentDataError(Exception):
+    """Raised when payment data is invalid."""
+    pass
