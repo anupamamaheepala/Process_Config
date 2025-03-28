@@ -1,31 +1,43 @@
 import configparser
+from urllib.parse import urlparse
+from pathlib import Path
+from functools import lru_cache
 from utils.filePath.filePath import get_filePath
 
-# Retrieve the API config file path
-config_path = get_filePath("apiConfig")
-
-def read_api_config(config_path=config_path):
+@lru_cache(maxsize=1)  # Simple caching
+def read_api_config() -> str:
     """
-    Read the API URL from the config file.
-
-    Args:
-        config_path (Path): Path to the config file.
-
+    Retrieves and validates the API URL from configuration.
+    
     Returns:
-        str: API URL from the config file.
-
+        Validated API URL string
+        
     Raises:
-        FileNotFoundError: If the configuration file is not found.
-        KeyError: If the API URL is not found in the configuration.
+        FileNotFoundError: If config file is missing
+        ValueError: If config is invalid or URL malformed
     """
+    config_path = get_filePath("apiConfig")
+    
+    # Validate file existence
     if not config_path or not config_path.is_file():
-        raise FileNotFoundError(f"Configuration file not found at: {config_path}")
+        raise FileNotFoundError(f"Config file missing at: {config_path}")
 
+    # Read config
     config = configparser.ConfigParser()
-    config.read(str(config_path))  # Convert Path object to string
-
+    config.read(str(config_path))
+    
+    # Get and validate URL
     try:
-        api_url = config.get('API', 'api_url')
-        return api_url
-    except (configparser.NoSectionError, configparser.NoOptionError) as e:
-        raise KeyError(f"API URL not found in {config_path}") from e
+        url = config.get('API', 'api_url', fallback='').strip()
+        if not url:
+            raise ValueError("API URL not configured")
+        
+        # Basic URL validation
+        parsed = urlparse(url)
+        if not all([parsed.scheme, parsed.netloc]):
+            raise ValueError(f"Invalid URL format: {url}")
+            
+        return url
+        
+    except configparser.Error as e:
+        raise ValueError(f"Invalid API configuration: {e}") from e

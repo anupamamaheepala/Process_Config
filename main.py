@@ -6,5 +6,5 @@ if __name__ == "__main__":
     incident_id = 438122
 
     # Create and process the incident in one step
-    incident = create_incident(account_num, incident_id)  # Auto-processes if __init__ is configured that way
+    incident = create_incident(account_num, incident_id) 
     incident.process_incident()
