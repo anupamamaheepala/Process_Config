@@ -31,7 +31,7 @@ class create_incident:
         Raises:
             ValueError: If either account_num or incident_id fails conversion.
         """
-        try:
+        try: # either one
             if account_num is None:
                 raise ValueError("account_num cannot be None")
             self.account_num = str(account_num)
