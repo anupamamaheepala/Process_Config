@@ -1,0 +1,18 @@
+{
+  "request_id": 2,
+  "created_dtm": {
+    "$date": "2025-02-08T12:10:40.000Z"
+  },
+  "case_id": 101,
+  "order_id": 1,
+  "account_num": "1234",
+  "parameters": {
+    "incident_id": "315"
+  },
+  "request_status": "Open",
+  "request_status_description": "Incident extraction from data lake",
+  "request_status_dtm": {
+    "$date": "2025-02-08T12:10:40.000Z"
+  },
+  "doc_version": "1.0"
+}

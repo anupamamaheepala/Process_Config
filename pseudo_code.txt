@@ -1,0 +1,94 @@
+1. **incident_create_copy.py**
+   - Define a class `create_incident` to handle incident creation and processing.
+   - Constructor:
+     - Initialize with `account_num` and `incident_id`.
+     - Validate inputs and initialize a MongoDB-like document structure (`mongo_data`).
+   - Methods:
+     - `initialize_mongo_doc`: Create a template for incident data with default values.
+     - `read_customer_details`: Fetch customer details from MySQL and populate `mongo_data`.
+     - `get_payment_data`: Retrieve the latest payment data for the account and update `mongo_data`.
+     - `format_json_object`: Convert `mongo_data` into a JSON string with proper formatting and type consistency.
+     - `json_serializer`: Handle serialization of non-JSON types (e.g., datetime, Decimal).
+     - `send_to_api`: Send the formatted JSON to an API endpoint via HTTP POST.
+     - `process_incident`: Orchestrate the entire process:
+       - Fetch customer details.
+       - Optionally fetch payment data.
+       - Format data as JSON.
+       - Send data to the API.
+
+2. **connectSQL.py**
+   - Define a function `get_mysql_connection` to establish a MySQL connection:
+     - Read database configuration from `DB_Config.ini`.
+     - Validate the configuration and connect to the database.
+     - Log success or failure.
+
+3. **connectAPI.py**
+   - Define a function `read_api_config` to retrieve the API URL:
+     - Read the API configuration file.
+     - Validate the URL format.
+     - Return the validated URL or raise an error if invalid.
+
+
+i want to add some function in to this data collecting part from the sql 
+
+here is the scenario 
+
+before the data is collected from the sql i want to get that details in time gap the gap is calculates has [Last_execution_dtm to the (system dtm - 1 minute)] like this 
+following are the data in mongo resquest.json i  pick request_status: "open" and request_status_description : "incident extraction from data lake" after all done i need to update that requeststatus error or complete within request_status_description and request_status_dtm
+
+
+request .json
+{
+  "request_id": 2,
+  "created_dtm": {
+    "$date": "2025-02-08T12:10:40.000Z"
+  },
+  "case_id": 101,
+  "order_id": 1,
+  "account_num": "1234",
+  "parameters": {
+    "incident_id": "315"
+  },
+  "request_status": "Open",
+  "request_status_description": Incident extraction from data lake,
+  "request_status_dtm": {
+    "$date": "2025-02-08T12:10:40.000Z"
+  },
+  "doc_version": "1.0"
+}
+
+when this request status open and request_status_description is "Incident extraction from data lake" i accept the task account_num and incident_id get from it (resquest.json in mongodb collection) 
+then i do the process (get sql data ) by finding the below table
+
+
+Process_Operation 
+{
+  "Process_Operation_Sequence": 1,
+  "created_dtm": {
+    "$date": "2025-04-01T23:59:00.000Z"
+  },
+  "Operation_name": "Incident extraction from data lake",
+  "Last_execution_dtm": {
+    "$date": "2025-04-01T23:58:00.000Z"
+  },
+  "end_dtm": {
+    "$date": "2025-04-02T00:00:00.000Z"
+  }
+}
+
+[Process_Operation 
+Process_Operation_Sequence	  1	
+created_dtm	    :   the mongodb collection this data created dtm                                                 
+Operation_name  : Incident extraction from data lake	                        
+Last_execution_dtm	  : last process execution dtm mean sqldatabase[LOAD_DATE] when process done                                                         
+end_dtm : end_dtm mean process end time 
+]
+
+
+ 
+and get the data from the sql database and update this data in the mongo collection(Process_Operation in mongodb collection)
+also update request .json in mongodb collection with the new data from sql database
+
+
+
+and create a get monogo collection function to get the data from the mongo collection in utils folder by geting a mongo url using ini file 

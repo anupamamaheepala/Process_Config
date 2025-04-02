@@ -1,5 +1,5 @@
 import pymysql  # Library for interacting with MySQL databases
-from datetime import datetime, date  # Modules for working with date and time
+from datetime import datetime, date, timedelta  # Modules for working with date and time
 from decimal import Decimal  # Module for handling precise decimal arithmetic
 import json  # Module for parsing and handling JSON data
 import requests  # Library for making HTTP requests
@@ -14,6 +14,9 @@ from utils.logger.logger import get_logger
 from utils.api.connectAPI import read_api_config
 # Import custom exceptions for error handling
 from utils.custom_exceptions.customize_exceptions import APIConfigError, IncidentCreationError
+
+# Import functions to interact with MongoDB
+from utils.database.connectMongo import get_mongo_collection
 
 
 logger = get_logger("incident_logger")
@@ -519,4 +522,108 @@ class create_incident:
             except Exception as e:
                 logger.error(f"Unexpected error: {e}", exc_info=True)
                 return False
+
+def process_incident_from_mongo():
+    """
+    Fetches open incidents from MongoDB, processes them, and updates the Process_Operation collection.
+    Handles logging, errors, validation, and updates the request.json collection.
+    """
+    try:
+        logger.info("Starting process to fetch and handle incidents from MongoDB.")
+
+        # Fetch the request.json collection
+        request_collection = get_mongo_collection("request")
+        process_collection = get_mongo_collection("Process_Operation")
+
+        # Query for open incidents with the specific description
+        open_requests = request_collection.find({
+            "request_status": "Open",
+            "request_status_description": "Incident extraction from data lake"
+        })
+
+        # Get the current maximum Process_Operation_Sequence
+        max_sequence_doc = process_collection.find_one(
+            {}, sort=[("Process_Operation_Sequence", -1)]
+        )
+        current_sequence = max_sequence_doc["Process_Operation_Sequence"] if max_sequence_doc else 0
+
+        for request in open_requests:
+            try:
+                account_num = request.get("account_num")
+                incident_id = request.get("parameters", {}).get("incident_id")
+
+                # Validate required fields
+                if not account_num or not incident_id:
+                    logger.warning(f"Skipping request due to missing account_num or incident_id: {request}")
+                    continue
+
+                # Increment the sequence for the new task
+                current_sequence += 1
+
+                # Fetch the last execution date from SQL database
+                mysql_conn = get_mysql_connection()
+                if not mysql_conn:
+                    logger.error("MySQL connection failed. Skipping this request.")
+                    continue
+
+                cursor = mysql_conn.cursor(pymysql.cursors.DictCursor)
+                cursor.execute(
+                    f"SELECT LOAD_DATE FROM some_table WHERE ACCOUNT_NUM = '{account_num}' "
+                    f"AND LOAD_DATE BETWEEN '{request['Last_execution_dtm']}' AND '{(datetime.utcnow() - timedelta(minutes=1)).isoformat()}' "
+                    "ORDER BY LOAD_DATE DESC LIMIT 1"
+                )
+                sql_result = cursor.fetchone()
+                last_execution_dtm = sql_result["LOAD_DATE"] if sql_result else None
+                cursor.close()
+                mysql_conn.close()
+
+                if not last_execution_dtm:
+                    logger.warning(f"No LOAD_DATE found for account: {account_num}. Skipping this request.")
+                    continue
+
+                # Calculate created_dtm and end_dtm
+                created_dtm = datetime.utcnow().isoformat()
+                end_dtm = datetime.utcnow().isoformat()
+
+                # Create a new Process_Operation document
+                process_operation = {
+                    "Process_Operation_Sequence": current_sequence,
+                    "created_dtm": created_dtm,
+                    "Operation_name": "Incident extraction from data lake",
+                    "Last_execution_dtm": last_execution_dtm.isoformat(),
+                    "end_dtm": end_dtm
+                }
+
+                # Insert into Process_Operation collection
+                process_collection.insert_one(process_operation)
+
+                # Update the request.json collection
+                request_collection.update_one(
+                    {"_id": request["_id"]},
+                    {
+                        "$set": {
+                            "request_status": "Complete",
+                            "request_status_description": "Processed successfully",
+                            "request_status_dtm": datetime.utcnow().isoformat()
+                        }
+                    }
+                )
+                logger.info(f"Processed incident for account: {account_num}, incident: {incident_id}")
+
+            except Exception as inner_exception:
+                logger.error(f"Error processing request: {request}. Error: {inner_exception}", exc_info=True)
+                # Update request.json with error status
+                request_collection.update_one(
+                    {"_id": request["_id"]},
+                    {
+                        "$set": {
+                            "request_status": "Error",
+                            "request_status_description": str(inner_exception),
+                            "request_status_dtm": datetime.utcnow().isoformat()
+                        }
+                    }
+                )
+
+    except Exception as e:
+        logger.error(f"Critical error in process_incident_from_mongo: {e}", exc_info=True)
 
